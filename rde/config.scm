@@ -122,6 +122,7 @@
 (use-modules (rde emacs packages))
 (use-modules (gnu home-services emacs))
 (use-modules (gnu packages emacs))
+(use-modules (gnu packages fonts))
 (use-modules (gnu packages emacs-xyz))
 (use-modules (guix gexp))
 
@@ -136,11 +137,10 @@
 			  ,#~(format #f "\"~a\"" #$emacs-editor-cmd))
 			 ("VISUAL" .
 			  ,#~(format #f "\"~a\"" #$emacs-client-cmd))))
-       ;; (simple-service
-       ;;  'add-emacs-package
-       ;;  home-emacs-service-type
-       ;;  (home-emacs-extension
-       ;;   (elisp-packages (list emacs-treemacs))))
+       (simple-service
+        'add-emacs-package
+        home-profile-service-type
+	(list font-iosevka))
 
        (service home-emacs-service-type
 		(home-emacs-configuration
@@ -419,10 +419,9 @@ export HISTFILE=\"$XDG_CACHE_HOME\"/.bash_history"))))))
 
 (define rde-cfg
   (rde-config
-   (user-name "bob")
-   (full-name "Andrew Tropin")
-   (email "andrew@trop.in")
-   (gpg-sign-key "2208D20958C1DEB0")
+   (user-name "keeper")
+   (full-name "Andrew Zhurov")
+   (email "zhurov.andrew@gmail.com")
    (keyboard-layout dvorak-jcuken)
    (features (append
 	      rde-features

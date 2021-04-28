@@ -30,8 +30,11 @@ gaps inner 10
 # Default wallpaper (more resolutions are available in /gnu/store/a8gdcipilhf6pipjgnnygmynp4hl4mmr-sway-1.5.1/share/backgrounds/sway/)
 # output * bg /gnu/store/a8gdcipilhf6pipjgnnygmynp4hl4mmr-sway-1.5.1/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
 # output eDP-1 res 1920x1080
-output HDMI-A-1 res 1920x1080 scale 1.5
-output DP-2 scale 2
+
+output eDP-1 pos 0 1080 res 1600x900 scale 1
+output DP-2 mode --custom 2160x1080
+output DP-2 pos 0 0 scale 1
+
 #
 # Example configuration:
 #

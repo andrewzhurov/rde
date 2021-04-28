@@ -55,7 +55,12 @@ really know what you do."))
        (format #f "\
 HOME_ENVIRONMENT=\"~a\"
 source $HOME_ENVIRONMENT/setup-environment
-guile $HOME_ENVIRONMENT/on-first-login\n"
+guile $HOME_ENVIRONMENT/on-first-login\n
+\n
+nohup gitwatch -b main -r origin ~/notes/org-roam/ &\n
+\n
+DOOMDIR=/home/keeper/.doom.d\n
+"
 	       (home-shell-profile-configuration-he-symlink-path config))
        (serialize-configuration
 	config

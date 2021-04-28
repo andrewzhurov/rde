@@ -112,7 +112,7 @@
     (build-system emacs-build-system)
     (propagated-inputs `(("emacs-rde-core" ,emacs-rde-core)
 			 ("emacs-rde-variables" ,emacs-rde-variables)
-			 ("emacs-rde-faces" ,emacs-rde-faces)
+;			 ("emacs-rde-faces" ,emacs-rde-faces)
 			 ("emacs-rde-org-roam" ,emacs-rde-org-roam)
 			 ("emacs-rde-modus-themes" ,emacs-rde-modus-themes)
 			 ("emacs-orderless" ,emacs-orderless)))
