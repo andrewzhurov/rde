@@ -118,7 +118,7 @@ state related items like git-state, rsync-state, etc."
 	       (shepherd-action
 		(name 'metadata)
 		(documentation "Returns metadata related to the state.")
-		(procedure #~(lambda* (_)
+		(procedure #~(lambda* _
 			       (append
 				'((path . #$path)
 				  (self . #$self))
@@ -157,10 +157,10 @@ state related items like git-state, rsync-state, etc."
        (actions (list
 		 (shepherd-action
 		  (name 'sync)
-		  (documentation "\
-Sync all the state. Highly dependent on state type.")
+		  (documentation
+                   "Sync all the state. Highly dependent on state type.")
 		  (procedure
-		   #~(lambda (_)
+		   #~(lambda _
 		       (map (lambda (name)
 			      (when (assoc-ref (car (action name 'metadata))
 					       'general-sync?)
@@ -170,7 +170,7 @@ Sync all the state. Highly dependent on state type.")
 		  (name 'init)
 		  (documentation "Initialize all the state.")
 		  ;; TODO: start service for the state after init
-		  (procedure #~(lambda (_)
+		  (procedure #~(lambda _
 				 (map (lambda (name)
 					(when (not (car (action name 'state-exists?)))
 					  (action name 'init)))

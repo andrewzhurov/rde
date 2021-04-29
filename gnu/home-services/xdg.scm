@@ -82,7 +82,7 @@ analogus to @file{/var/lib}, but for user.  It is not a part of XDG
 Base Directory Specification, but helps to make implementation of home
 services more consistent."))
 
-(define (home-xdg-base-directories-environment-vars-service config)
+(define (home-xdg-base-directories-environment-variables-service config)
   (map
    (lambda (field)
      (cons (format
@@ -95,13 +95,13 @@ services more consistent."))
   (service-type (name 'home-xdg-base-directories)
                 (extensions
                  (list (service-extension
-                        home-environment-vars-service-type
-                        home-xdg-base-directories-environment-vars-service)))
+                        home-environment-variables-service-type
+                        home-xdg-base-directories-environment-variables-service)))
                 (default-value (home-xdg-base-directories-configuration))
                 (description "Configure XDG base directories.  This
 service introduces two additional variables @env{XDG_STATE_HOME},
 @env{XDG_LOG_HOME}.  They are not a part of XDG specification, at
-least yet, but are convinient to have, it improves a consistency
+least yet, but are convinient to have, it improves the consistency
 between different home services.")))
 
 (define (generate-home-xdg-base-directories-documentation)
@@ -315,7 +315,7 @@ The value of an XDG MIME entry must be a list, string or symbol, was given ~a")
   (actions xdg-desktop-entry-actions    ; list of <xdg-desktop-action>
            (default '())))
 
-(define desktop-entries? list?)
+(define desktop-entries? (listof xdg-desktop-entry?))
 (define (serialize-desktop-entries field-name val) "")
 
 (define (serialize-xdg-desktop-entry entry)
@@ -434,5 +434,5 @@ that the application cannot open the specified MIME type.")
                 (compose identity)
                 (extend home-xdg-mime-applications-extension)
                 (default-value (home-xdg-mime-applications-configuration))
-                (description "\
-Configure XDG MIME applications, and XDG desktop entries.")))
+                (description
+                 "Configure XDG MIME applications, and XDG desktop entries.")))

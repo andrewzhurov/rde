@@ -72,7 +72,8 @@
 
 (define serialize-string serialize-field)
 
-(define %pinentry-flavors '(tty emacs gtk2 qt gnome3 rofi efl))
+(define-enum pinentry-flavor
+  '(tty emacs gtk2 qt gnome3 rofi efl))
 
 (define (serialize-pinentry-flavor field-name val)
   (let ((pinentry-program #~(string-append "pinentry-program "
@@ -86,14 +87,6 @@
                          "allow-emacs-pinentry\n"
                          "allow-loopback-pinentry\n")
         pinentry-program)))
-
-(define (pinentry-flavor? flavor)
-  (if (member flavor %pinentry-flavors)
-      #t
-      (raise (formatted-message
-              (G_ "Pinentry must be one of ~a, was given: ~s")
-              (list->human-readable-list %pinentry-flavors)
-              flavor))))
 
 (define ssh-agent? boolean?)
 (define (serialize-ssh-agent field-name val)
@@ -178,7 +171,7 @@ yields the following in @file{sshcontrol}:
    (pinentry-flavor 'gtk2)
    (string-append "Which pinentry interface to use.  Valid options are: "
                   (list->human-readable-list
-                   %pinentry-flavors
+                   (enum-value pinentry-flavor)
                    #:cumulative? #t
                    #:proc (cut format #f "``~a''" <>))))
   (extra-options
@@ -219,16 +212,15 @@ have a configuration for gpg-agent."))
    (home-gpg-agent-configuration (home-gpg-agent-configuration))
    "Configuration for the @code{gpg-agent}"))
 
-(define (home-gnupg-environment-vars-service config)
+(define (home-gnupg-environment-variables-service config)
   "Add SSH_AUTH_SOCK variable to user's environment."
-  (if (home-gpg-agent-configuration-ssh-agent?
-       (home-gnupg-configuration-gpg-agent-config config))
-      `(("SSH_AUTH_SOCK" .
-	 ,#~(string-append
-	     "$("
-	     #$(file-append gnupg "/bin/gpgconf")
-	     " --list-dirs agent-ssh-socket)")))
-      '()))
+  (optional (home-gpg-agent-configuration-ssh-agent?
+             (home-gnupg-configuration-gpg-agent-config config))
+            `(("SSH_AUTH_SOCK" .
+               ,#~(string-append
+                   "$("
+                   #$(file-append gnupg "/bin/gpgconf")
+                   " --list-dirs agent-ssh-socket)")))))
 
 (define (home-gpg-agent-file config)
   (mixed-text-file
@@ -274,9 +266,9 @@ have a configuration for gpg-agent."))
 
 (define (home-gnupg-shepherd-service config)
   (let ((provision-list `(gpg-agent
-                          ,@(if (home-gpg-agent-configuration-ssh-agent?
-                                 (home-gnupg-configuration-gpg-agent-config config))
-                                '(ssh-agent) '()))))
+                          ,@(optional (home-gpg-agent-configuration-ssh-agent?
+                                       (home-gnupg-configuration-gpg-agent-config config))
+                                      '(ssh-agent)))))
     (list
      (shepherd-service
       (documentation "Run and control gpg-agent.")
@@ -298,8 +290,8 @@ have a configuration for gpg-agent."))
                 (string-join
                  (append
                   (list #$(file-append gnupg "/bin/gpg-agent")
-			"--daemon"
-			"--options"
+                        "--daemon"
+                        "--options"
                         #$(home-gpg-agent-file config))
                   (quote #$(home-gpg-agent-configuration-extra-options
                             (home-gnupg-configuration-gpg-agent-config config)))))))
@@ -325,8 +317,8 @@ have a configuration for gpg-agent."))
                         home-run-on-reconfigure-service-type
                         home-gnupg-run-on-reconfigure-service)
 		       (service-extension
-                        home-environment-vars-service-type
-                        home-gnupg-environment-vars-service)
+                        home-environment-variables-service-type
+                        home-gnupg-environment-variables-service)
                        (service-extension
                         home-shepherd-service-type
                         home-gnupg-shepherd-service)
@@ -337,7 +329,8 @@ have a configuration for gpg-agent."))
                         home-profile-service-type
                         home-gnupg-profile-service)))
                 (default-value (home-gnupg-configuration))
-                (description "Install and configure gpg and gpg-agent.")))
+                (description "Install and configure GnuPG, this
+includes the @command{gpg} and @command{gpg-agent} commands.")))
 
 (define (generate-home-gnupg-documentation)
   (generate-documentation

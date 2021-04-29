@@ -60,7 +60,8 @@ guile $HOME_ENVIRONMENT/on-first-login\n
 nohup gitwatch -b main -r origin ~/notes/org-roam/ &\n
 \n
 DOOMDIR=/home/keeper/.doom.d\n
-"
+. $HOME_ENVIRONMENT/setup-environment
+guile $HOME_ENVIRONMENT/on-first-login\n"
 	       (home-shell-profile-configuration-he-symlink-path config))
        (serialize-configuration
 	config
@@ -83,10 +84,9 @@ DOOMDIR=/home/keeper/.doom.d\n
 		(compose concatenate)
 		(extend add-profile-extensions)
 		(default-value (home-shell-profile-configuration))
-                (description "\
-Create @file{~/.profile}, which is used for environment initialization
-of POSIX compatible login shells.  Can be extended with a list of strings or
-gexps.")))
+                (description " Create @file{~/.profile}, which is used
+for environment initialization of POSIX compliant login shells.  This
+service type can be extended with a list of strings or gexps.")))
 
 (define (serialize-boolean field-name val) "")
 
@@ -150,35 +150,33 @@ another process for example)."))
 
     (define (file-if-not-empty field)
       (let ((file-name (symbol->string field))
-	    (field-obj (car (filter-fields field))))
-	(if (not (null? ((configuration-field-getter field-obj) config)))
-	    `(,(prefix-file file-name)
-	      ,(mixed-text-file
-		file-name
-		(serialize-field field)))
-	    '())))
+            (field-obj (car (filter-fields field))))
+        (optional (not (null? ((configuration-field-getter field-obj) config)))
+                  `(,(prefix-file file-name)
+                    ,(mixed-text-file
+                      file-name
+                      (serialize-field field))))))
 
     (filter
      (compose not null?)
-     `(,(if xdg-flavor?
-	    `("zshenv"
-	      ,(mixed-text-file
-		"auxiliary-zshenv"
-		(if xdg-flavor?
-		    "source ${XDG_CONFIG_HOME:-$HOME/.config}/zsh/.zshenv\n"
-		    "")))
-	    '())
+     `(,(optional xdg-flavor?
+                  `("zshenv"
+                    ,(mixed-text-file
+                      "auxiliary-zshenv"
+                      (if xdg-flavor?
+                          "source ${XDG_CONFIG_HOME:-$HOME/.config}/zsh/.zshenv\n"
+                          ""))))
        (,(prefix-file "zshenv")
-	,(mixed-text-file
-	  "zshenv"
-	  (if xdg-flavor?
-	      "export ZDOTDIR=${XDG_CONFIG_HOME:-$HOME/.config}/zsh\n"
-	      "")
-	  (serialize-field 'zshenv)))
+        ,(mixed-text-file
+          "zshenv"
+          (if xdg-flavor?
+              "export ZDOTDIR=${XDG_CONFIG_HOME:-$HOME/.config}/zsh\n"
+              "")
+          (serialize-field 'zshenv)))
        (,(prefix-file "zprofile")
-	,(mixed-text-file
-	  "zprofile"
-	  "\
+        ,(mixed-text-file
+          "zprofile"
+          "\
 # Setups system and user profiles and related variables
 source /etc/profile
 # Setups home environment profile
@@ -401,4 +399,4 @@ if [ -f ~/.bashrc ]; then . ~/.bashrc; fi\n
 		(compose identity)
 		(extend home-bash-extensions)
                 (default-value (home-bash-configuration))
-                (description "Install and configure Bash.")))
+                (description "Install and configure GNU Bash.")))
