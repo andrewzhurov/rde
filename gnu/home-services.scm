@@ -1,6 +1,8 @@
 (define-module (gnu home-services)
   #:use-module (gnu services)
   #:use-module (gnu home-services-utils)
+  #:use-module (guix channels)
+  #:use-module (guix describe)
   #:use-module (guix monads)
   #:use-module (guix store)
   #:use-module (guix gexp)
@@ -8,15 +10,18 @@
   #:use-module (guix diagnostics)
   #:use-module (guix discovery)
   #:use-module (guix ui)
+  #:autoload   (guix openpgp) (openpgp-format-fingerprint)
 
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 match)
+  #:use-module (ice-9 pretty-print)
 
   #:export (home-service-type
 	    home-profile-service-type
 	    home-environment-variables-service-type
 	    home-run-on-first-login-service-type
-	    home-run-on-reconfigure-service-type
+	    home-activation-service-type
+	    home-provenance-service-type
             fold-home-service-types)
 
   #:re-export (service
@@ -105,20 +110,31 @@ exported."
 	       (string-append
 	        "HOME_ENVIRONMENT="
 		(assoc-ref vars "GUIX_HOME_ENVIRONMENT_DIRECTORY")
+		;; TODO: It's necessary to source ~/.guix-profile too on foreign distros
 		"
-GUIX_PROFILE=\"$HOME_ENVIRONMENT/profile\" ; \\
+GUIX_PROFILE=\"$HOME_ENVIRONMENT/profile\"
 . \"$HOME_ENVIRONMENT/profile/etc/profile\"
 
-[[ :$XDG_DATA_DIRS: =~ :$HOME_ENVIRONMENT/profile/share: ]] || \
-export XDG_DATA_DIRS=$HOME_ENVIRONMENT/profile/share:$XDG_DATA_DIRS
-[[ :$MANPATH: =~ :$HOME_ENVIRONMENT/profile/share/man: ]] || \
-export MANPATH=$HOME_ENVIRONMENT/profile/share/man:$MANPATH
-[[ :$INFOPATH: =~ :$HOME_ENVIRONMENT/profile/share/info: ]] || \
-export INFOPATH=$HOME_ENVIRONMENT/profile/share/info:$INFOPATH
-[[ :$XDG_CONFIG_DIRS: =~ :$HOME_ENVIRONMENT/profile/etc/xdg: ]] || \
-export XDG_CONFIG_DIRS=$HOME_ENVIRONMENT/profile/etc/xdg:$XDG_CONFIG_DIRS
-[[ :$XCURSOR_PATH: =~ :$HOME_ENVIRONMENT/profile/share/icons: ]] || \
-export XCURSOR_PATH=$HOME_ENVIRONMENT/profile/share/icons:$XCURSOR_PATH
+case $XDG_DATA_DIRS in
+  *$HOME_ENVIRONMENT/profile/share*) ;;
+  *) export XDG_DATA_DIRS=$HOME_ENVIRONMENT/profile/share:$XDG_DATA_DIRS ;;
+esac
+case $MANPATH in
+  *$HOME_ENVIRONMENT/profile/share/man*) ;;
+  *) export MANPATH=$HOME_ENVIRONMENT/profile/share/man:$MANPATH
+esac
+case $INFOPATH in
+  *$HOME_ENVIRONMENT/profile/share/info*) ;;
+  *) export INFOPATH=$HOME_ENVIRONMENT/profile/share/info:$INFOPATH ;;
+esac
+case $XDG_CONFIG_DIRS in
+  *$HOME_ENVIRONMENT/profile/etc/xdg*) ;;
+  *) export XDG_CONFIG_DIRS=$HOME_ENVIRONMENT/profile/etc/xdg:$XDG_CONFIG_DIRS ;;
+esac
+case $XCURSOR_PATH in
+  *$HOME_ENVIRONMENT/profile/share/icons*) ;;
+  *) export XCURSOR_PATH=$HOME_ENVIRONMENT/profile/share/icons:$XCURSOR_PATH ;;
+esac
 
 ")
 
@@ -144,7 +160,7 @@ export XCURSOR_PATH=$HOME_ENVIRONMENT/profile/share/icons:$XCURSOR_PATH
                 (description "Set the environment variables.")))
 
 (define (compute-on-first-login-script _ gexps)
-  (gexp->file
+  (gexp->script
    "on-first-login"
    #~(let* ((xdg-runtime-dir (or (getenv "XDG_RUNTIME_DIR")
 				 (format #f "/run/user/~a" (getuid))))
@@ -173,35 +189,186 @@ in the home environment directory."
                 (compose identity)
                 (extend compute-on-first-login-script)
 		(default-value #f)
-                (description "Run gexps on first user login and can \
-be extended with one gexp.")))
+                (description "Run gexps on first user login and can be
+extended with one gexp.")))
 
-(define (compute-on-reconfigure-script _ gexps)
-  (gexp->file "on-reconfigure"
-              #~(begin #$@gexps)))
+(define (compute-activation-script init-gexp gexps)
+  (gexp->script "activate"
+		#~(begin #$init-gexp #$@gexps)))
 
-(define (on-reconfigure-script-entry m-on-reconfigure)
-  "Return, as a monadic value, an entry for the on-reconfigure script
+(define (activation-script-entry m-activation)
+  "Return, as a monadic value, an entry for the activation script
 in the home environment directory."
-  (mlet %store-monad ((on-reconfigure m-on-reconfigure))
-    (return `(("on-reconfigure" ,on-reconfigure)))))
+  (mlet %store-monad ((activation m-activation))
+    (return `(("activate" ,activation)))))
 
-(define home-run-on-reconfigure-service-type
-  (service-type (name 'home-run-on-reconfigure)
+(define home-activation-service-type
+  (service-type (name 'home-activation)
                 (extensions
                  (list (service-extension
 			home-service-type
-                        on-reconfigure-script-entry)))
+                        activation-script-entry)))
                 (compose identity)
-                (extend compute-on-reconfigure-script)
+                (extend compute-activation-script)
 		(default-value #f)
-                (description "Run gexps to update the current state of \
-the home directory during reconfiguration.  This service can be \
-extended with one gexp, and all gexps must be idempotent.")))
+                (description "Run gexps to activate the current
+generation of home environment and update the state of the home
+directory.  @command{activate} script automatically called during
+reconfiguration or generation switching.  This service can be extended
+with one gexp, and all gexps must be idempotent.")))
 
 
 
-;; Used for searching for services
+
+;;;
+;;; Provenance tracking.
+;;;
+
+;; TODO: Import all provenance functions from services.scm
+
+(define (object->pretty-string obj)
+  "Like 'object->string', but using 'pretty-print'."
+  (call-with-output-string
+    (lambda (port)
+      (pretty-print obj port))))
+
+(define (channel->code channel)
+  "Return code to build CHANNEL, ready to be dropped in a 'channels.scm'
+file."
+  ;; Since the 'introduction' field is backward-incompatible, and since it's
+  ;; optional when using the "official" 'guix channel, include it if and only
+  ;; if we're referring to a different channel.
+  (let ((intro (and (not (equal? (list channel) %default-channels))
+                    (channel-introduction channel))))
+    `(channel (name ',(channel-name channel))
+              (url ,(channel-url channel))
+              (branch ,(channel-branch channel))
+              (commit ,(channel-commit channel))
+              ,@(if intro
+                    `((introduction
+                       (make-channel-introduction
+                        ,(channel-introduction-first-signed-commit intro)
+                        (openpgp-fingerprint
+                         ,(openpgp-format-fingerprint
+                           (channel-introduction-first-commit-signer
+                            intro))))))
+                    '()))))
+
+(define (channel->sexp channel)
+  "Return an sexp describing CHANNEL.  The sexp is _not_ code and is meant to
+be parsed by tools; it's potentially more future-proof than code."
+  ;; TODO: Add CHANNEL's introduction.  Currently we can't do that because
+  ;; older 'guix system describe' expect exactly name/url/branch/commit
+  ;; without any additional fields.
+  `(channel (name ,(channel-name channel))
+            (url ,(channel-url channel))
+            (branch ,(channel-branch channel))
+            (commit ,(channel-commit channel))))
+
+(define (sexp->channel sexp)
+  "Return the channel corresponding to SEXP, an sexp as found in the
+\"provenance\" file produced by 'provenance-service-type'."
+  (match sexp
+    (('channel ('name name)
+               ('url url)
+               ('branch branch)
+               ('commit commit)
+               rest ...)
+     ;; XXX: In the future REST may include a channel introduction.
+     (channel (name name) (url url)
+              (branch branch) (commit commit)))))
+
+(define (provenance-file channels config-file)
+  "Return a 'provenance' file describing CHANNELS, a list of channels, and
+CONFIG-FILE, which can be either #f or a <local-file> containing the OS
+configuration being used."
+  (scheme-file "provenance"
+               #~(provenance
+                  (version 0)
+                  (channels #+@(if channels
+                                   (map channel->sexp channels)
+                                   '()))
+                  (configuration-file #+config-file))))
+
+(define (provenance-entry config-file)
+  "Return system entries describing the operating system provenance: the
+channels in use and CONFIG-FILE, if it is true."
+  (define profile
+    (current-profile))
+
+  (define channels
+    (and=> profile profile-channels))
+
+  (mbegin %store-monad
+    (let ((config-file (cond ((string? config-file)
+                              ;; CONFIG-FILE has been passed typically via
+                              ;; 'guix system reconfigure CONFIG-FILE' so we
+                              ;; can assume it's valid: tell 'local-file' to
+                              ;; not emit a warning.
+                              (local-file (assume-valid-file-name config-file)
+                                          "configuration.scm"))
+                             ((not config-file)
+                              #f)
+                             (else
+                              config-file))))
+      (return `(("provenance" ,(provenance-file channels config-file))
+                ,@(if channels
+                      `(("channels.scm"
+                         ,(plain-file "channels.scm"
+                                      (object->pretty-string
+                                       `(list
+                                         ,@(map channel->code channels))))))
+                      '())
+                ,@(if config-file
+                      `(("configuration.scm" ,config-file))
+                      '()))))))
+
+
+(define home-provenance-service-type
+  (service-type (name 'home-provenance)
+                (extensions
+                 (list (service-extension home-service-type
+                                          provenance-entry)))
+                (default-value #f)                ;the HE config file
+                (description
+                 "Store provenance information about the
+home environment in the home environment itself: the channels used
+when building the home environment, and its configuration file, when
+available.")))
+
+(define (sexp->home-provenance sexp)
+  "Parse SEXP, an s-expression read from ~/.guix-home-environment/provenance or
+similar, and return two values: the list of channels listed therein, and the
+HE configuration file or #f."
+  (match sexp
+    (('provenance ('version 0)
+                  ('channels channels ...)
+                  ('configuration-file config-file))
+     (values (map sexp->channel channels)
+             config-file))
+    (_
+     (values '() #f))))
+
+(define (home-provenance home-environment)
+  "Given HOME-ENVIRONMENT, the file name of a system generation,
+return two values: the list of channels HOME-ENVIRONMENT is built
+from, and its configuration file.  If that information is missing,
+return the empty list (for channels) and possibly #false (for the
+configuration file)."
+  (catch 'system-error
+    (lambda ()
+      (sexp->home-provenance
+       (call-with-input-file (string-append home-environment "/provenance")
+         read)))
+    (lambda _
+      (values '() #f))))
+
+
+
+;;;
+;;; Searching
+;;;
+
 (define (parent-directory directory)
   "Get the parent directory of DIRECTORY"
   (string-join (drop-right (string-split directory #\/) 1) "/"))

@@ -6,26 +6,19 @@
 :PROPERTIES:
 :VISIBILITY: children
 :END:
-** TODO Do we need init action?
-It can help to ensure that basic environment variables are set and
-loaded.  Make reconfigure work only if
-~GUIX_HOME_ENVIRONMENT_DIRECTORY~ is present.
+** TODO Make fonts service
 ** TODO Add provenance
 To make ~guix home describe~ more informative.
 ** TODO How to update env variables on reconfigure?
 Also, how to make them available in format suitable for shepherd
-services?
-** TODO Establish testing workflow (write guideline)
-** TODO Add copyrights to source code
+services? Shepherd services takes env from shepherd.
 ** TODO Ensure style is correct
 https://mumble.net/~campbell/scheme/style.txt
 https://emacs-guix.gitlab.io/website/manual/latest/emacs-guix.html#Development
 https://guix.gnu.org/manual/en/guix.html#Coding-Style
+Add copyrights to source code
 ** TODO Cleanup utils module
 Split into utils and configuration related helper?
-** IN-PROGRESS Create clean example configuration
-~rde/config.scm~ is a ready to use configuration, but requires few
-helpers to make it customizable by the end user.
 ** Finished
 :PROPERTIES:
 :VISIBILITY: folded
@@ -58,6 +51,10 @@ Define schedule and add the information to announce.
 **** DONE Announce on stream
 *** DONE Discuss xdg-flavor? default to #t
 *** DONE Establish documenting workflow (write guideline)
+*** DONE on-reconfigure -> activation
+Refactor on-reconfigure service, it should be activation service,
+because this script can be called on generation switch event and not
+only on reconfigure.
 * ~guix home~ Backlog
 :PROPERTIES:
 :VISIBILITY: children
@@ -70,18 +67,6 @@ Define schedule and add the information to announce.
 - Install extensions for Nyxt, see [[https://github.com/atlas-engineer/nyxt/blob/master/documents/EXTENSIONS.org#L1][here]]
 ** IN-PROGRESS Add on-change to on-reconfigure script?
 For some apps to run some commands like restart if their configs updated
-** TODO Implement a standard way to create common configuration file formats
-Some programs use the standard [[https://en.wikipedia.org/wiki/INI_file][INI configuration format]], e.g. XDG
-desktop entries, Notmuch.  Git uses a it's own variant of the INI
-format, other formats like JSON, TOML, and YAML are also pretty
-common.  See ~lib.generators~ in [[https://github.com/nixos/nixpkgs/blob/master/lib/generators.nix#L1][Nixpkgs]].
-
-*** TODO Standard INI format
-*** TODO Git INI format
-*** TODO JSON format
-- Look at the service for Transmission in ~(gnu services file-sharing)~
-*** TODO TOML format
-*** TODO YAML format
 ** TODO Comprehensive Email configuration
 Things the user should be able to configure
 - IMAP and SMTP info (e.g. address, username, port)
@@ -94,6 +79,7 @@ Things the user should be able to configure
 - notmuch/mu
 *** TODO SMTP client
 - msmtp/sendmail
+** TODO Shepherd service for Sway?
 ** DONE sway
 ** DONE Emacs
 Features:
@@ -107,6 +93,8 @@ Also browser plugins and other stuff
 :PROPERTIES:
 :VISIBILITY: content
 :END:
+** Extensions mechanism
+*** IN-PROGRESS Implement features -> he/os converter
 ** UI
 *** TODO Visually separate sway workspaces for different workflows
 - code
@@ -119,3 +107,7 @@ Start user-space shepherd on first user login and exit on last logout.
 - https://www.opennet.ru/base/dev/pam_linux.txt.html
 Take a look at mpd service for user-service example and /run/user/ID
 creation.
+
+*** IN-PROGRESS Create clean example configuration
+~rde/config.scm~ is a ready to use configuration, but requires few
+helpers to make it customizable by the end user.

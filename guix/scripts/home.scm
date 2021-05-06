@@ -129,7 +129,7 @@ Some ACTIONS support additional ARGS.\n"))
 	       (switch-symlinks user-home-environment-symlink-path
 				%guix-home-environment)
 
-	       (primitive-load (string-append he-path "/on-reconfigure"))
+	       (primitive-load (string-append he-path "/activate"))
 	       (return he-path)))
             (else
              (newline)
@@ -152,20 +152,24 @@ resulting from command-line parsing."
          (expr   (assoc-ref opts 'expression))
          (system (assoc-ref opts 'system))
 
+	 (transform   (lambda (obj)
+                        (home-environment-with-provenance obj file)))
+
          (home-environment
-          (ensure-home-environment
-           (or file expr)
-           (cond
-            ((and expr file)
-             (leave
-              (G_ "both file and expression cannot be specified~%")))
-            (expr
-             (read/eval expr))
-            (file
-             (load* file %user-module
-                    #:on-error (assoc-ref opts 'on-error)))
-            (else
-             (leave (G_ "no configuration specified~%"))))))
+	  (transform
+           (ensure-home-environment
+            (or file expr)
+            (cond
+             ((and expr file)
+              (leave
+               (G_ "both file and expression cannot be specified~%")))
+             (expr
+              (read/eval expr))
+             (file
+              (load* file %user-module
+                     #:on-error (assoc-ref opts 'on-error)))
+             (else
+              (leave (G_ "no configuration specified~%")))))))
 
          (dry?        (assoc-ref opts 'dry-run?)))
 
@@ -445,7 +449,7 @@ all the home environment generations."
 SPEC.  STORE is an open connection to the store."
   (let* ((number (relative-generation-spec->number %guix-home-environment spec))
          (generation (generation-file-name %guix-home-environment number))
-         (activate (string-append generation "/on-reconfigure")))
+         (activate (string-append generation "/activate")))
     (if number
         (begin
           (switch-to-generation* %guix-home-environment number)

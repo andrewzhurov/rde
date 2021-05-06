@@ -91,12 +91,27 @@ services more consistent."))
 	   ((configuration-field-getter field) config)))
    home-xdg-base-directories-configuration-fields))
 
+(define (ensure-xdg-base-dirs-on-activation config)
+  #~(map (lambda (xdg-base-dir-variable)
+	   ((@@ (guix build utils) mkdir-p)
+	    (getenv
+	     xdg-base-dir-variable)))
+	 '#$(map (lambda (field)
+		   (format
+		    #f "XDG_~a"
+		    (object->snake-case-string
+		     (configuration-field-name field) 'upper)))
+		 home-xdg-base-directories-configuration-fields)))
+
 (define home-xdg-base-directories-service-type
   (service-type (name 'home-xdg-base-directories)
                 (extensions
                  (list (service-extension
                         home-environment-variables-service-type
-                        home-xdg-base-directories-environment-variables-service)))
+                        home-xdg-base-directories-environment-variables-service)
+		       (service-extension
+			home-activation-service-type
+			ensure-xdg-base-dirs-on-activation)))
                 (default-value (home-xdg-base-directories-configuration))
                 (description "Configure XDG base directories.  This
 service introduces two additional variables @env{XDG_STATE_HOME},
@@ -164,7 +179,7 @@ pre-populated content.")
        config
        home-xdg-user-directories-configuration-fields)))))
 
-(define (home-xdg-user-directories-on-reconfigure config)
+(define (home-xdg-user-directories-activation-service config)
   (let ((dirs (map (lambda (field)
 		     ((configuration-field-getter field) config))
 		   home-xdg-user-directories-configuration-fields)))
@@ -184,8 +199,8 @@ pre-populated content.")
                         home-files-service-type
                         home-xdg-user-directories-files-service)
                        (service-extension
-                        home-run-on-reconfigure-service-type
-                        home-xdg-user-directories-on-reconfigure)))
+                        home-activation-service-type
+                        home-xdg-user-directories-activation-service)))
                 (default-value (home-xdg-user-directories-configuration))
                 (description "Configure XDG user directories.  To
 disable a directory, point it to the $HOME.")))

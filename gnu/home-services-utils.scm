@@ -5,6 +5,9 @@
   #:use-module (guix gexp)
   #:use-module (guix monads)
   #:use-module (guix i18n)
+  #:use-module (guix profiles)
+  #:use-module (guix packages)
+  #:use-module (guix build-system trivial)
 
   #:use-module (ice-9 curried-definitions)
   #:use-module (ice-9 match)
@@ -32,12 +35,14 @@
             object->snake-case-string
             ini-config?
             generic-serialize-ini-config
+            generic-serialize-git-ini-config
             alist?
             listof
             listof-strings?
 
             maybe-list
             optional
+            wrap-package
 
             define-enum
             enum-name
@@ -262,15 +267,24 @@ DELIMITER interposed LS.  Support 'infix and 'suffix GRAMMAR values."
 (define (generic-serialize-ini-config-section section proc)
   "Format a section from SECTION for an INI configuration.
 Apply the procedure PROC on SECTION after it has been converted to a string"
-  (format #f "[~a]\n" (proc (maybe-object->string section))))
+  (format #f "\n[~a]\n" (proc section)))
 
-(define* (generic-serialize-ini-config #:key
-                                       (format-section identity)
-                                       (combine-ini string-join)
-                                       (combine-alist string-append)
-                                       (combine-section-alist string-append)
-                                       serialize-field
-                                       fields)
+(define default-ini-format-section
+  (match-lambda
+    ((section subsection)
+     (string-append (maybe-object->string section) " "
+                    (maybe-object->string subsection)))
+    (section
+     (maybe-object->string section))))
+
+(define* (generic-serialize-ini-config
+          #:key
+          (combine-ini string-join)
+          (combine-alist string-append)
+          (combine-section-alist string-append)
+          (format-section default-ini-format-section)
+          serialize-field
+          fields)
   "Create an INI configuration from nested lists FIELDS.  This uses
 @code{generic-serialize-ini-config-section} and @{generic-serialize-alist} to
 serialize the section and the association lists, respectively.
@@ -278,13 +292,38 @@ serialize the section and the association lists, respectively.
 @example
 (generic-serialize-ini-config
  #:serialize-field (lambda (a b) (format #f \"~a = ~a\n\" a b))
- #:format-section string-capitalize
+ #:format-section (compose string-capitalize symbol->string)
  #:fields '((application ((key . value)))))
 @end example
 
 @result{} \"[Application]\nkey = value\n\""
   (combine-ini
    (map (match-lambda
+          ((section alist)
+           (combine-section-alist
+            (generic-serialize-ini-config-section section format-section)
+            (generic-serialize-alist combine-alist serialize-field alist))))
+        fields)
+   "\n"))
+
+(define* (generic-serialize-git-ini-config
+          #:key
+          (combine-ini string-join)
+          (combine-alist string-append)
+          (combine-section-alist string-append)
+          (format-section default-ini-format-section)
+          serialize-field
+          fields)
+  "Like @code{generic-serialize-ini-config}, but the section can also
+have a @dfn{subsection}.  FORMAT-SECTION will take a list of two
+elements: the section and the subsection."
+  (combine-ini
+   (map (match-lambda
+          ((section subsection alist)
+           (combine-section-alist
+            (generic-serialize-ini-config-section
+             (list section subsection) format-section)
+            (generic-serialize-alist combine-alist serialize-field alist)))
           ((section alist)
            (combine-section-alist
             (generic-serialize-ini-config-section section format-section)
@@ -321,7 +360,32 @@ return EXPR2; if it isn't specified, return EXPR1.  Otherwise, return
 an empty list @code{'()}."
   (if expr1 (if expr2 expr2 expr1) '()))
 
-;;;
+(define (wrap-package package name gexp)
+  "Create a @code{<package>} object that is a wrapper for PACKAGE, and
+runs GEXP.  NAME is the name of the executable that will be put in the store."
+  (let ((wrapper (program-file name gexp)))
+    (package/inherit package
+      (name name)                       ; avoid collisions
+      (source wrapper)
+      (build-system trivial-build-system)
+      (arguments
+       `(#:modules
+         ((guix build utils))
+         #:builder
+         (begin
+           (use-modules (guix build utils)
+                        (srfi srfi-1))
+           (let* ((bin (string-append %output "/bin"))
+                  ;; Get the name of the wrapper
+                  ;; The user might put their store somewhere besides
+                  ;; /gnu/store/...-NAME, and NAME is not allowed to
+                  ;; contain `/', so we split the string in `/'.
+                  (wrapper (assoc-ref %build-inputs "source"))
+                  (name (substring (last (string-split wrapper #\/)) 33)))
+             (mkdir-p bin)
+             (copy-file wrapper (string-append bin "/" name)))))))))
+
+;;
 ;;; Enums.
 ;;;
 
@@ -368,3 +432,4 @@ an empty list @code{'()}."
                            (enum-name stem)
                            (syntax->datum msg)
                            val))))))))))
+
