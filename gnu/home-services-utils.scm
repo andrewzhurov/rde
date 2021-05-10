@@ -21,6 +21,7 @@
 
 	    alist-entry->mixed-text
             boolean->yes-or-no
+            boolean->true-or-false
             list->human-readable-list
             maybe-object->string
             filter-configuration-fields
@@ -33,6 +34,7 @@
 	    text-config?
 	    serialize-text-config
             object->snake-case-string
+            object->camel-case-string
             ini-config?
             generic-serialize-ini-config
             generic-serialize-git-ini-config
@@ -40,6 +42,8 @@
             listof
             listof-strings?
 
+            rest
+            flatten
             maybe-list
             optional
             wrap-package
@@ -151,6 +155,15 @@ Setting CAPITALIZE? to @code{#t} will capitalize the word, it is set to
         (string-capitalize word)
         word)))
 
+(define* (boolean->true-or-false bool #:optional (capitalize? #f))
+  "Convert a boolean BOOL to \"true\" or \"false\".
+Setting CAPITALIZE? to @code{#t} will capitalize the word, it is set to
+@code{#f} by default."
+  (let ((word (if (eq? bool #t) "true" "false")))
+    (if capitalize?
+        (string-capitalize word)
+        word)))
+
 (define (maybe-object->string object)
   "Like @code{object->string} but don't do anyting if OBJECT already is
 a string."
@@ -214,6 +227,30 @@ case''.  STYLE can be three `@code{lower}', `@code{upper}', or
           ((equal? style 'upper) (string-upcase stringified))
           (else (string-capitalize stringified)))
          "-" "_"))))
+
+(define* (object->camel-case-string object #:optional (style 'lower))
+  "Convert the object OBJECT to the equivalent string in ``camel case''.
+STYLE can be three `@code{lower}', `@code{upper}', defaults to
+`@code{lower}'.
+
+@example
+(object->camel-case-string 'variable-name 'upper)
+@result{} \"VariableName\"
+@end example"
+  (if (not (member style '(lower upper)))
+      (error 'invalid-style (format #f "~a is not a valid style" style))
+      (let ((stringified (maybe-object->string object)))
+        (cond
+         ((eq? style 'upper)
+          (string-concatenate
+           (map string-capitalize
+                (string-split stringified (cut eqv? <> #\-)))))
+         ((eq? style 'lower)
+          (let ((splitted-string (string-split stringified (cut eqv? <> #\-))))
+            (string-concatenate
+             (cons (first splitted-string)
+                   (map string-capitalize
+                        (rest splitted-string))))))))))
 
 ;;;
 ;;; Serializers.
@@ -347,6 +384,12 @@ the list result in @code{#t} when applying PRED? on them."
 ;;;
 ;;; Miscellaneous.
 ;;;
+
+(define rest cdr)
+
+(define (flatten lst)
+  "Flatten LST by one level."
+  (fold-right (lambda (lst acc) (append lst acc)) '() lst))
 
 (define (maybe-list a)
   "If A is a list, return it, otherwise return a singleton list with A."
