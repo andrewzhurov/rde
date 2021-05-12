@@ -442,7 +442,7 @@ export HISTFILE=\"$XDG_CACHE_HOME\"/.bash_history"))))))
 
 (define rde-cfg
   (rde-config
-   (user-name "keeper")
+   (user-name "user1")
    (full-name "Andrew Zhurov")
    (email "zhurov.andrew@gmail.com")
    (keyboard-layout dvorak-jcuken)

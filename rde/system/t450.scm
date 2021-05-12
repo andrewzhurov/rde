@@ -38,6 +38,10 @@
   #:use-module (ice-9 match)
   #:export (os))
 
+;; TODO: merge these uses into the declaration above
+(use-modules (gnu))
+(use-service-modules desktop networking ssh xorg)
+
 (define os
   (operating-system
    (host-name "t450")
@@ -69,12 +73,25 @@
 
    ;; uuid is found via https://linuxhint.com/uuid_storage_devices_linux/
    ;; NOTE: may require PARTITIONUUID instead of the specified UUID
-   (file-systems (cons* (file-system
-			 (device (uuid "4e6bf147-13f8-43dc-844d-7310c1b7c256"))
-			 (mount-point "/")
-			 (type "ext4"))
-			%base-file-systems))
-   
+   (file-systems
+    (cons* (file-system
+            (mount-point "/boot/efi")
+            (device (uuid "8F1E-C5A1" 'fat32))
+            (type "vfat"))
+           (file-system
+            (mount-point "/")
+            (device
+             (uuid "cbbacbe6-2d31-411b-b94f-c8663738161c"
+                   'ext4))
+            (type "ext4"))
+           %base-file-systems))
+   ;; (file-systems (cons* (file-system
+   ;; 			 (device (uuid "cbbacbe6-2d31-411b-b94f-c8663738161c"))
+   ;; 			 (mount-point "/")
+   ;; 			 (type "ext4"))
+   ;; 			%base-file-systems))
+
+  
    ;; (file-systems (cons* (file-system
    ;;                       (device "/dev/mapper/enc")
    ;;                       (mount-point "/")
@@ -118,6 +135,9 @@
    ;; 			 (device (uuid "8C99-0704" 'fat32)))
    ;; 			%base-file-systems))
 
+     (swap-devices
+      (list (uuid "13ef6849-bc7d-4c55-8f1b-e439c9ec6f9c")))
+     
    ;; Create user `user1' with `user1' as its initial password.
    (users (cons (user-account
                  (name "user1")
@@ -133,8 +153,10 @@
    (packages (append
 	      (map specification->package+output
 		   '("font-iosevka" "font-dejavu" "font-gnu-unifont"
+		     "pipewire"
 		     ;; System packages
 		     "iwd"
+		    
 		     "grub" "glibc" "nss-certs"))
 	      %base-packages-disk-utilities
 	      %base-packages))
@@ -147,6 +169,14 @@
       ;;  'add-xdg-desktop-portals
       ;;  dbus-root-service-type
       ;;  (list xdg-desktop-portal xdg-desktop-portal-wlr))
+
+      ;; plaing with a sample audio service from https://guix.gnu.org/manual/en/html_node/Audio-Services.html
+      ;; (service mpd-service-type
+      ;; 	       (mpd-configuration
+      ;; 		(user "user1")
+      ;; 		(port "6666")
+      ;; 		(music-dir "~/music")
+      ;; 		))
       (simple-service 'switch-to-tty2 shepherd-root-service-type
                       (list (shepherd-service
                              (provision '(kdb))
