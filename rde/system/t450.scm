@@ -72,7 +72,8 @@
    (file-systems (cons* (file-system
 			 (device (uuid "4e6bf147-13f8-43dc-844d-7310c1b7c256"))
 			 (mount-point "/")
-			 (type "ext4"))))
+			 (type "ext4"))
+			%base-file-systems))
    
    ;; (file-systems (cons* (file-system
    ;;                       (device "/dev/mapper/enc")
