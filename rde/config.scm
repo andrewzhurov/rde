@@ -165,6 +165,9 @@
 		 (elisp-packages (cons*
 				  emacs-rde-default-init
 				  emacs-yaml-mode
+				  emacs-evil
+				  emacs-paredit
+				  emacs-smartparens
 				  %rde-additional-emacs-packages))
 		 (server-mode? server-mode?)
 		 (xdg-flavor? #f)

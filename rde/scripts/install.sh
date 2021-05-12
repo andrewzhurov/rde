@@ -3,8 +3,8 @@ cd ~/work
 
 git clone https://github.com/abcdw/rde
 
-git config --global user.email "andrew@trop.in"
-git config --global user.name "Andrew Tropin"
+git config --global user.email "zhurov.andrew@gmail.com"
+git config --global user.name "Andrei Zhurau"
 
 ln -sf /home/guest/work/rde/rde/sway ~/.config/
 ln -sf /home/guest/work/rde/stale/dotfiles/.config/alacritty ~/.config/

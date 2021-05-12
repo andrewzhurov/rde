@@ -17,3 +17,6 @@ env-info:
 	echo -e "`guix describe -f recutils | grep -v intro`\n\
 	name: rde\nurl: https://git.sr.ht/~abcdw/rde\n\
 	commit: `git log -n1 --format=format:'%H'`"
+
+nrepl:
+	GUILE_LOAD_PATH= guix repl -- ./rde/nrepl.scm

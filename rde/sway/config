@@ -31,8 +31,9 @@ gaps inner 10
 # output * bg /gnu/store/a8gdcipilhf6pipjgnnygmynp4hl4mmr-sway-1.5.1/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
 # output eDP-1 res 1920x1080
 
-output eDP-1 pos 0 1080 res 1600x900 scale 1
-output DP-2 mode --custom 2160x1080
+output eDP-1 pos 0 1200 res 1600x900 scale 1
+# looks like Lenovo Thinkpad T450 cannot render over 1200 (it's built-in display resolution)
+output DP-2 mode --custom 2160x1200
 output DP-2 pos 0 0 scale 1
 
 #
@@ -68,12 +69,6 @@ output DP-2 pos 0 0 scale 1
 #
 # You can get the names of your inputs by running: swaymsg -t get_inputs
 # Read `man 5 sway-input` for more information about this section.
-
-input "*" {
-    xkb_layout us,ru
-    xkb_variant dvorak,
-    xkb_options grp:win_space_toggle,ctrl:nocaps
-}
 
 ### Key bindings
 #
