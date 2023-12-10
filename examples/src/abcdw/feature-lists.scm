@@ -105,7 +105,8 @@
 (define-public %emacs-features
   (list
    (feature-emacs
-    #:default-application-launcher? #t)
+    #:default-application-launcher? #f
+    #:extra-init-el `((load ,(local-file "./tmp.el"))))
 
    (feature-emacs-appearance
     #:extra-elisp
@@ -132,9 +133,9 @@
    (feature-emacs-monocle)
 
    (feature-emacs-message)
-   (feature-emacs-erc
-    #:erc-log? #t
-    #:erc-autojoin-channels-alist '((Libera.Chat "#rde")))
+   ;; (feature-emacs-erc
+   ;;  #:erc-log? #t
+   ;;  #:erc-autojoin-channels-alist '((Libera.Chat "#rde")))
    (feature-emacs-telega)
    (feature-emacs-elpher)
 
@@ -163,7 +164,7 @@
    %base-features
    %dev-features
    %virtualization-features
-   %mail-features
+   ;; %mail-features
    %cli-features
    %ui-features
    %emacs-features))

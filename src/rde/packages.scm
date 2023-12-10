@@ -29,6 +29,10 @@
   #:use-module (gnu packages image)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages base)
+  #:use-module (gnu packages node)
+  #:use-module (gnu build chromium-extension)
+  #:use-module (rde packages emacs-xyz)
+  #:use-module (gnu packages emacs-xyz)
 
   #:use-module (srfi srfi-1)
 
@@ -41,7 +45,10 @@
   #:use-module (guix git-download)
   #:use-module (guix build-system meson)
   #:use-module (guix build-system gnu)
+  #:use-module (guix build-system trivial)
+  #:use-module (guix build-system emacs)
   #:use-module ((guix licenses) #:prefix license:)
+
   #:export (strings->packages
             strings->inferior-packages))
 
@@ -239,7 +246,6 @@ predefined configurations, practices and workflows.")
 ;;     (source
 ;;      (local-file (dirname (dirname (current-filename))) #:recursive? #t))))
 
-
 
 ;;;
 ;;; Sway
@@ -391,3 +397,81 @@ predefined configurations, practices and workflows.")
         (file-name (git-file-name name version))
         (sha256
          (base32 "0g7pjancp5xny0fjdy2vs4pnsp21rffdha3v4lkzja2yfbpj0yb1")))))))
+
+
+(use-modules
+   ((guix licenses) #:prefix license:)
+   (guix utils)
+   (guix build utils)
+   (guix packages)
+   (guix git-download)
+   (guix build-system trivial)
+   (guix build-system copy)
+   (gnu packages ssh)
+   (gnu packages version-control)
+   (gnu packages linux)
+   (gnu packages web)
+   (gnu packages pkg-config)
+   (gnu packages python)
+   (gnu packages compression)
+   (gnu packages tls)
+   )
+
+(define-public gitwatch
+  (let ((commit "9339ff6832c56eb30b6f2c7df0eaae48122b3571")
+        (revision "1"))
+    (package
+      (name "gitwatch")
+      (version (git-version "0.1" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/gitwatch/gitwatch")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+
+                (sha256
+                 (base32
+                  "1jrjvzi3lka05dv0g4jswajak2w267995fcvka4bnkfik71k8kmv"))))
+
+      (build-system copy-build-system)
+      (arguments
+       `(#:install-plan
+	 '(("gitwatch.sh" "bin/gitwatch"))))
+
+      (propagated-inputs `(("git" ,git)
+			   ("inotify-tools" ,inotify-tools)))
+      (home-page "https://github.com/gitwatch/gitwatch")
+      (synopsis "Watch a file or folder and automatically commit changes to a git repo easily.")
+      (description "A bash script to watch a file or folder and commit change.")
+      (license license:gpl3))))
+
+(define-public emacs-org-roam-ui
+  (package
+    (name "emacs-org-roam-ui")
+    (version "9ed0c5705a302a91fab2b8bcc777a12dcf9b3682")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/org-roam/org-roam-ui")
+             (commit "9ed0c5705a302a91fab2b8bcc777a12dcf9b3682")))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1am11vnzklv0cbivsw5r8x8fx457166mvfgyv7cdhrz88s8iqm23"))))
+    (build-system emacs-build-system)
+    (arguments
+     `(#:phases %standard-phases
+       #:include (cons "out" %default-include))) ;; "out" contains .js code, as mentioned here: https://github.com/org-roam/org-roam-ui/issues/77#issuecomment-907664589
+    (propagated-inputs
+     `(("emacs-org-roam" ,emacs-org-roam)
+       ("emacs-websocket" ,emacs-websocket)
+       ("emacs-simple-httpd" ,emacs-simple-httpd)
+       ("emacs-f" ,emacs-f)
+       ))
+    (home-page "https://github.com/org-roam/org-roam-ui")
+    (synopsis "A graphical frontend for exploring your org-roam Zettelkasten")
+    (description "Org-Roam-UI is a frontend for exploring and interacting with your org-roam notes.
+
+Org-Roam-UI is meant a successor of org-roam-server that extends functionality of org-roam with a Web app that runs side-by-side with Emacs.")
+       (license license:gpl3+))) ;; actually it's GPL3.0

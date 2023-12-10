@@ -14,11 +14,11 @@ target/profiles/guix.lock: rde/channels-lock.scm
 	make target/profiles/guix
 
 target/profiles/guix: target/profiles rde/channels-lock.scm
-	guix pull -C rde/channels-lock.scm -p ${GUIX_PROFILE} \
+	guix pull -C rde/channels-lock.scm -p ${GUIX_PROFILE} --allow-downgrades \
 	${PULL_EXTRA_OPTIONS}
 
 target/profiles/guix-local: target/profiles rde/channels-lock-local.scm
-	guix pull -C rde/channels-lock-local.scm -p ${GUIX_PROFILE} \
+	guix pull -C rde/channels-lock-local.scm -p ${GUIX_PROFILE} --allow-downgrades \
 	${PULL_EXTRA_OPTIONS}
 
 rde/channels-lock.scm: rde/channels.scm

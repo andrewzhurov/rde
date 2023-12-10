@@ -239,7 +239,7 @@ feature-ssh."
   (define (get-system-services config)
     (list
      (service network-manager-service-type
-              (network-manager-configuration (iwd? #t)))
+              (network-manager-configuration))
      (service iwd-service-type
               (iwd-configuration
                (main-conf

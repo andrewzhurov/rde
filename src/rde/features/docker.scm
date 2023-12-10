@@ -55,7 +55,8 @@ Docker interface and Dockerfile syntax"
 Keybinding and Dockerfile major mode association."
       #:keywords '(convenience)
       ;; MAYBE: Add emacs-docker-tramp?
-      #:elisp-packages (list emacs-docker emacs-dockerfile-mode))))
+      #:elisp-packages (list emacs-docker emacs-dockerfile-mode
+                             emacs-flycheck-clj-kondo))))
 
   (define (get-system-services config)
     (list

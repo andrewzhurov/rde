@@ -47,6 +47,11 @@
             feature-emacs-portable
 
             rde-elisp-configuration-service
+
+            feature-emacs-org-roam-ui
+            feature-ucm
+            feature-emacs-rust
+
             emacs-xdg-service
             expand-extra-elisp
             emacs-minibuffer-program))
@@ -509,7 +514,7 @@ Prefix argument can be used to kill a few words."
           ;; (define-key global-map (kbd "C-h") 'backward-delete-char-untabify)
           (define-key global-map (kbd "M-K") 'kill-whole-line)
           (define-key global-map (kbd "M-c") 'capitalize-dwim)
-          (define-key global-map (kbd "M-l") 'downcase-dwim)
+          ;; (define-key global-map (kbd "M-l") 'downcase-dwim)
           (define-key global-map (kbd "M-u") 'upcase-dwim)
           (define-key global-map (kbd "C-w") 'rde-kill-region-dwim)
 
@@ -632,3 +637,64 @@ It can contain settings not yet moved to separate features."
 ;; TODO: https://www.reddit.com/r/emacs/comments/xb6qdm/super_fast_emacs_start_up/
 
 ;;; emacs.scm end here
+
+;; TODO: feature-emacs-epub https://depp.brause.cc/nov.el/
+
+(define* (feature-emacs-org-roam-ui) ;; based on feature-emacs-org-roam
+  "Configure org-roam-ui for GNU Emacs."
+
+  (define emacs-f-name 'org-roam-ui)
+  (define f-name (symbol-append 'emacs- emacs-f-name))
+
+  (define (get-home-services config)
+    (list
+     (rde-elisp-configuration-service
+      emacs-f-name
+      config
+      `()
+      #:elisp-packages (list emacs-org-roam-ui))))
+
+  (feature
+   (name f-name)
+   (values `((,f-name . #t)))
+   (home-services-getter get-home-services)))
+
+;; TODO: feature-emacs-reasonable-keybindings
+;; TODO: Fix env vars for emacs daemon
+;; https://github.com/purcell/exec-path-from-shell
+;; TODO: feature-emacs-epub https://depp.brause.cc/nov.el/
+;; TODO: feature-series-tracker https://github.com/MaximeWack/seriesTracker
+
+
+(define* (feature-ucm) ;; based on feature-emacs-org-roam-ui
+  "Configure Unisonweb Code Manager."
+
+  (define f-name 'ucm)
+
+  (define (get-home-services config)
+    (list
+     ))
+
+  (feature
+   (name f-name)
+   (values `((,f-name . #t)))
+   (home-services-getter get-home-services)))
+
+(define* (feature-emacs-rust) ;; based on feature-emacs-org-roam-ui
+  "Configure rust for GNU Emacs."
+
+  (define emacs-f-name 'rust)
+  (define f-name (symbol-append 'emacs- emacs-f-name))
+
+  (define (get-home-services config)
+    (list
+     (rde-elisp-configuration-service
+      emacs-f-name
+      config
+      `()
+      #:elisp-packages (list emacs-rust-mode))))
+
+  (feature
+   (name f-name)
+   (values `((,f-name . #t)))
+   (home-services-getter get-home-services)))

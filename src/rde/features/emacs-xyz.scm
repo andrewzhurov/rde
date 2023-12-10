@@ -2258,6 +2258,11 @@ Start an unlimited search at `point-min' otherwise."
                '())
 
          (with-eval-after-load 'notmuch (require 'ol-notmuch))
+         (with-eval-after-load 'org
+                               (add-to-list 'org-modules 'org-habit t))
+         (with-eval-after-load 'org
+                               (require 'org-habit))
+         (setq org-habit-graph-column 80)
 
          (add-hook 'org-mode-hook 'org-appear-mode)
          (add-hook 'org-mode-hook 'olivetti-mode)

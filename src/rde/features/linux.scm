@@ -19,7 +19,7 @@
 (define* (feature-backlight
 	  #:key
 	  (default-brightness 100)
-	  (step 10)
+	  (step 1)
 	  (brightnessctl brightnessctl))
   "Setup and configure brightness for various devices."
   (ensure-pred brightness? default-brightness)

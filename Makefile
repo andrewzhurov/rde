@@ -5,6 +5,8 @@ QEMU_BASE_ARGS= \
 -vga none -device virtio-gpu-pci
 # -vga qxl
 
+default: examples/t450/home/reconfigure
+
 all: doc/rde.info
 	@echo default target
 
@@ -15,8 +17,8 @@ check:
 	guix time-machine -C ./examples/rde/channels-lock.scm -- \
 	home --fallback build ./src/gnu/home/examples/minimal.tmpl
 
-examples/ixy/home/reconfigure:
-	make -C examples ixy/home/reconfigure
+examples/t450/home/reconfigure:
+	make -C examples t450/home/reconfigure
 
 .PHONY: examples/target/rde-live.iso
 

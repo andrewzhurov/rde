@@ -296,3 +296,35 @@ contributed packages to Telega.")))
        (modify-inputs (package-propagated-inputs emacs-docker)
          (delete "emacs-docker-tramp")
          (append emacs-transient-latest))))))
+
+;; Andrew Zhurov's sandbox
+(use-modules (guix download))
+
+(define-public emacs-flycheck-clj-kondo
+  (let* ((commit "ff7bed2315755cfe02ef471edf522e27b78cd5ca")
+         (revision "0"))
+    (package
+      (name "emacs-flycheck-clj-kondo")
+      (version (git-version "0.0.3" revision commit)) ;; latest as of 2022-08-23
+      (source
+       (origin
+         (method git-fetch)
+         (uri  (git-reference
+                (url "https://github.com/borkdude/flycheck-clj-kondo")
+                (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "0h0cbiifzjfm5ymwf98h6nlkaqavdlxvccdsb1h0yf4246scf251"))))
+      (inputs
+       (list emacs-flycheck))
+      (build-system emacs-build-system)
+      (home-page "https://github.com/borkdude/flycheck-clj-kondo")
+      (synopsis
+       "Emacs integration for clj-kondo via flycheck")
+      (description
+       "This package integrates clj-kondo with Emacs via flycheck.")
+      (license license:epl1.0) ;; presumably the same as for clj-kondo, but it's not set explicitly in the project repo
+      )))
+
+emacs-flycheck-clj-kondo

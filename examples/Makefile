@@ -7,7 +7,7 @@ GUIX_PROFILE=target/profiles/guix
 GUIX=./pre-inst-env ${GUIX_PROFILE}/bin/guix
 
 SRC_DIR=./src
-CONFIGS=${SRC_DIR}/abcdw/configs.scm
+CONFIGS=${SRC_DIR}/andrewzhurov/configs.scm
 PULL_EXTRA_OPTIONS=
 # --allow-downgrades
 
@@ -16,23 +16,23 @@ ROOT_MOUNT_POINT=/mnt
 VERSION=latest
 
 
-ixy/home/build: guix
-	RDE_TARGET=ixy-home ${GUIX} home \
-	build ${CONFIGS}
+t450/home/build: guix
+	RDE_TARGET=t450-home ${GUIX} home \
+	build ${CONFIGS} --allow-downgrades
 
-ixy/home/reconfigure: guix
-	RDE_TARGET=ixy-home ${GUIX} home \
-	reconfigure ${CONFIGS}
+t450/home/reconfigure: guix
+	RDE_TARGET=t450-home ${GUIX} home \
+	reconfigure ${CONFIGS} --allow-downgrades
 
-ixy/system/reconfigure: guix
-	RDE_TARGET=ixy-system ${GUIX} system \
-	reconfigure ${CONFIGS}
+t450/system/reconfigure: guix
+	RDE_TARGET=t450-system ${GUIX} system \
+	reconfigure ${CONFIGS} --allow-downgrades
 
 cow-store:
 	sudo herd start cow-store ${ROOT_MOUNT_POINT}
 
-ixy/system/init: guix
-	RDE_TARGET=ixy-system ${GUIX} system \
+t450/system/init: guix
+	RDE_TARGET=t450-system ${GUIX} system \
 	init ${CONFIGS} ${ROOT_MOUNT_POINT}
 
 target:

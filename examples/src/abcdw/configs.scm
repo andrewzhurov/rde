@@ -1,6 +1,7 @@
 (define-module (abcdw configs)
   #:use-module (abcdw feature-lists)
   #:use-module (abcdw hosts ixy)
+  #:use-module (abcdw hosts t450)
   #:use-module (abcdw hosts live)
 
   #:use-module (rde features)
@@ -79,7 +80,19 @@
        "emacs-minimap"
        "emacs-ement"
        "emacs-restart-emacs"
-       "emacs-org-present"))))))
+       "emacs-org-present"
+
+       ;; andrewzhurov's stuff below
+      "emacs-minimap"
+      "emacs-paredit"
+      "emacs-dired-hacks"
+      "emacs-aggressive-indent"
+      "emacs-typescript-mode"
+      "emacs-tide"
+      "emacs-rustic"
+      "emacs-rust-mode"
+      "emacs-flycheck" ;; for clj-kondo for Clojure
+      ))))))
 
 (define home-extra-packages-service
   (simple-service
@@ -99,7 +112,7 @@
      "imagemagick"
      "obs" "obs-wlrobs"
      "recutils" "binutils" "make"
-     "fheroes2"
+     ;; "fheroes2"
 
      "hicolor-icon-theme" "adwaita-icon-theme" "gnome-themes-extra"
      "papirus-icon-theme" "arc-theme"
@@ -108,15 +121,61 @@
 
      "libreoffice"
      "ffmpeg"
-     "ripgrep" "curl"))))
+     "ripgrep" "curl"
+
+
+     ;; Andrew Zhurov's stuff below
+     ;; clojure-related stuff
+     ;; "clojure" ;; already in feature
+     "rlwrap" ;; mayb required by clojure cli
+     "node" ;; mayb required for shadow-cljs
+     ;; "supercollider" ;; does it work?
+     ;; "leiningen" ;; does it work?
+     ;; already in feature
+     ;; "clojure-tools" ;; that may provide `clj` command line util, not tested. required by cider-jack-in Emacs command
+     ;; "clojure-tools-cli" ;; does it work?
+     ;; "openjdk" ;; breaks cider for daylight
+     "icedtea" ;; breaks shadow-cljs for rent
+
+     "clj-kondo"
+     ;; "emacs-clojure-mode" ;; does it work?
+     ;; "emacs-cider" ;; mayb required by clojure - emacs integration ;; in feature
+     ;; "emacs-lsp-mode"
+     ;; "emacs-lsp-ui"
+     ;; "emacs-company-lsp" ;; for better completion
+     ;; "emacs-eglot" ;; for automatic LSP launch for current file, mode-based
+     ;; "emacs-lsp-java" ;; seems to add Java support for LSP
+
+     "emacs-org-tanglesync" ;; for literate programming, I think I recall
+
+     "sqlite" ;; for unisonweb
+
+     "qbittorrent"
+
+     ;; "fastboot" "android-udev-rules" "adb" ;; for android USB OS install, some of these packages may not be needed though. I ended up having my own version of fastboot built
+     ;; (@ (rde packages scrcpy) scrcpy) ;; error
+     ;; scrcpy ;; error
+     ;; "scrcpy" ;; package not found
+
+     ;; "nmtui" ;; is not a package, seems to come included with guix profile; or mayb comes from 'network-manager'; for network (wifi incl.) management
+
+     "realtek-firmware" ;; for wifi, I suppose
+     "atheros-firmware" ;; mayb for wifi
+     "iwlwifi-firmware" ;; mayb for wifi
+
+     "mplayer" ;; seems to be for mpv
+
+     "awscli"
+     "p7zip"
+     ))))
 
 (define sway-extra-config-service
   (simple-service
    'sway-extra-config
    home-sway-service-type
-   `((output DP-2 scale 2)
+   `(;; (output DP-2 scale 2)
      ;; (output eDP-1 disable)
-     ,@(map (lambda (x) `(workspace ,x output DP-2)) (iota 8 1))
+     ;; ,@(map (lambda (x) `(workspace ,x output DP-2)) (iota 8 1))
 
      ;; (workspace 9 output DP-2)
      ;; (workspace 10 output DP-2)
@@ -141,7 +200,25 @@
              (tap enabled)))
 
      ;; (xwayland disable)
-     (bindsym $mod+Shift+Return exec emacs))))
+     (bindsym $mod+Shift+Return exec emacs)
+
+     ;; Andrew Zhurov's config below
+     (output DP-2)
+     ;; This worked fine for TV in Minsk
+     ;; (output DP-2 mode --custom 1920x1082) ;; tried both this
+     ;; (output DP-2 pos 0 0 scale 1) ;; + this
+
+     ;; (output DP-2 mode --custom 2133x1200) ;; tried both this
+     (output DP-2 pos 0 0 scale 1) ;; + this
+
+     ;; (output eDP-1 pos 0 1080 res 1600x900 scale 1)
+     ;; (output DP-2 pos 0 0 res 1920x1080 scale 1) ;; and that
+     (output DP-2 mode --custom 1600x900)
+     ;; 2133x1200 close to max width-wide 16:9 I could get working
+     ;; 1920x1082 behaves fine
+     (workspace 9 output DP-2)
+     (workspace 10 output DP-2)
+     )))
 
 (define i2pd-add-ilita-irc-service
   (simple-service
@@ -199,9 +276,9 @@
 (define %abcdw-features
   (list
    (feature-user-info
-    #:user-name "bob"
-    #:full-name "Andrew Tropin"
-    #:email "andrew@trop.in"
+    #:user-name "user1"
+    #:full-name "Andrew Zhurov"
+    #:email "zhurov.andrew@gmail.com"
     #:user-initial-password-hash
     "$6$abc$3SAZZQGdvQgAscM2gupP1tC.SqnsaLSPoAnEOb2k6jXMhzQqS1kCSplAJ/vUy2rrnpHtt6frW2Ap5l/tIvDsz."
     ;; (crypt "bob" "$6$abc")
@@ -210,38 +287,39 @@
     ;; some helpful messages and parts of the interface for the sake
     ;; of minimalistic, less distractive and clean look.  Generally
     ;; it's not recommended to use it.
-    #:emacs-advanced-user? #t)
+    #:emacs-advanced-user? #f)
    (feature-gnupg
-    #:gpg-primary-key "74830A276C328EC2")
-   (feature-security-token)
-   (feature-password-store
-    #:remote-password-store-url "ssh://abcdw@olorin.lan/~/state/password-store")
+    ;; #:gpg-primary-key "74830A276C328EC2"
+    #:gpg-primary-key "AE2DD20B5BCB36A3")
+   ;; (feature-security-token)
+   ;; (feature-password-store
+   ;;  #:remote-password-store-url "ssh://abcdw@olorin.lan/~/state/password-store")
 
-   (feature-mail-settings
-    #:mail-accounts (list (mail-acc 'work       "andrew@trop.in" 'gandi)
-                          (mail-acc 'personal   "andrewtropin@gmail.com"))
-    #:mailing-lists (list (mail-lst 'guix-devel "guix-devel@gnu.org"
-                                    '("https://yhetil.org/guix-devel/0"))
-                          (mail-lst 'guix-bugs "guix-bugs@gnu.org"
-                                    '("https://yhetil.org/guix-bugs/0"))
-                          (mail-lst 'guix-patches "guix-patches@gnu.org"
-                                    '("https://yhetil.org/guix-patches/1"))))
+   ;; (feature-mail-settings
+   ;;  #:mail-accounts (list (mail-acc 'work       "andrew@trop.in" 'gandi)
+   ;;                        (mail-acc 'personal   "andrewtropin@gmail.com"))
+   ;;  #:mailing-lists (list (mail-lst 'guix-devel "guix-devel@gnu.org"
+   ;;                                  '("https://yhetil.org/guix-devel/0"))
+   ;;                        (mail-lst 'guix-bugs "guix-bugs@gnu.org"
+   ;;                                  '("https://yhetil.org/guix-bugs/0"))
+   ;;                        (mail-lst 'guix-patches "guix-patches@gnu.org"
+   ;;                                  '("https://yhetil.org/guix-patches/1"))))
 
-   (feature-irc-settings
-    #:irc-accounts (list
-                    (irc-account
-                     (id 'srht)
-                     (network "chat.sr.ht")
-                     (bouncer? #t)
-                     (nick "abcdw"))
-                    (irc-account
-                     (id 'libera)
-                     (network "irc.libera.chat")
-                     (nick "abcdw"))
-                    (irc-account
-                     (id 'oftc)
-                     (network "irc.oftc.net")
-                     (nick "abcdw"))))
+   ;; (feature-irc-settings
+   ;;  #:irc-accounts (list
+   ;;                  (irc-account
+   ;;                   (id 'srht)
+   ;;                   (network "chat.sr.ht")
+   ;;                   (bouncer? #t)
+   ;;                   (nick "abcdw"))
+   ;;                  (irc-account
+   ;;                   (id 'libera)
+   ;;                   (network "irc.libera.chat")
+   ;;                   (nick "abcdw"))
+   ;;                  (irc-account
+   ;;                   (id 'oftc)
+   ;;                   (network "irc.oftc.net")
+   ;;                   (nick "abcdw"))))
 
    (feature-custom-services
     #:feature-name-prefix 'abcdw
@@ -253,11 +331,11 @@
      ssh-extra-config-service
      i2pd-add-ilita-irc-service))
 
-   (feature-ssh-proxy #:host "pinky-ygg" #:auto-start? #f)
-   (feature-ssh-proxy #:host "pinky-ygg" #:name "hundredrps"
-                      #:proxy-string "50080:localhost:8080"
-                      #:reverse? #t
-                      #:auto-start? #f)
+   ;; (feature-ssh-proxy #:host "pinky-ygg" #:auto-start? #f)
+   ;; (feature-ssh-proxy #:host "pinky-ygg" #:name "hundredrps"
+   ;;                    #:proxy-string "50080:localhost:8080"
+   ;;                    #:reverse? #t
+   ;;                    #:auto-start? #f)
 
    (feature-xdg
     #:xdg-user-directories-configuration
@@ -277,7 +355,7 @@
     ;; 'purokishi.i2p
     #:less-anonymous? #t)
 
-   (feature-emacs-keycast #:turn-on? #t)
+   (feature-emacs-keycast #:turn-on? #f)
 
    (feature-emacs-tempel
     #:default-templates? #t
@@ -299,41 +377,41 @@
    (feature-emacs-git
     #:project-directory "~/work")
    (feature-emacs-org
-    #:org-directory "~/work/abcdw/private"
+    #:org-directory "~/notes/org-roam"
     #:org-indent? #f
     #:org-capture-templates
     `(("t" "Todo" entry (file+headline "" "Tasks") ;; org-default-notes-file
        "* TODO %?\nSCHEDULED: %t\n%U\n%a\n" :clock-in t :clock-resume t)))
    (feature-emacs-org-roam
     ;; TODO: Rewrite to states
-    #:org-roam-directory "~/work/abcdw/notes/notes")
+    #:org-roam-directory "~/notes/org-roam")
    (feature-emacs-org-agenda
-    #:org-agenda-files '("~/work/abcdw/private/todo.org"
-                         "~/work/abcdw/rde/TODO"))
-   (feature-emacs-elfeed
-    #:elfeed-org-files '("~/work/abcdw/private/rss.org"))
+    #:org-agenda-files '("~/notes/org-roam"
+                         "~/notes/org-roam/daily"))
+   ;; (feature-emacs-elfeed
+   ;;  #:elfeed-org-files '("~/work/abcdw/private/rss.org"))
 
    (feature-javascript)
 
    ;; TODO: move feature to general, move extra configuration to service.
-   (feature-notmuch
-    ;; TODO: Add integration with mail-lists
-    ;; `notmuch-show-stash-mlarchive-link-alist'
-    #:extra-tag-updates-post
-    '("notmuch tag +guix-home -- 'thread:\"\
-{((subject:guix and subject:home) or (subject:service and subject:home) or \
-subject:/home:/) and tag:new}\"'")
-    #:notmuch-saved-searches
-    (cons*
-     ;; TODO: Add tag:unread to all inboxes.  Revisit archive workflow.
-     '(:name "Work Inbox" :query "tag:work and tag:inbox and tag:unread" :key "W")
-     '(:name "Personal Inbox" :query "tag:personal and tag:inbox" :key "P")
-     '(:name "Guix Home Inbox" :key "H" :query "tag:guix-home and tag:unread")
-     '(:name "RDE Inbox"       :key "R"
-             :query "(to:/rde/ or cc:/rde/) and tag:unread")
+;;    (feature-notmuch
+;;     ;; TODO: Add integration with mail-lists
+;;     ;; `notmuch-show-stash-mlarchive-link-alist'
+;;     #:extra-tag-updates-post
+;;     '("notmuch tag +guix-home -- 'thread:\"\
+;; {((subject:guix and subject:home) or (subject:service and subject:home) or \
+;; subject:/home:/) and tag:new}\"'")
+;;     #:notmuch-saved-searches
+;;     (cons*
+;;      ;; TODO: Add tag:unread to all inboxes.  Revisit archive workflow.
+;;      '(:name "Work Inbox" :query "tag:work and tag:inbox and tag:unread" :key "W")
+;;      '(:name "Personal Inbox" :query "tag:personal and tag:inbox" :key "P")
+;;      '(:name "Guix Home Inbox" :key "H" :query "tag:guix-home and tag:unread")
+;;      '(:name "RDE Inbox"       :key "R"
+;;              :query "(to:/rde/ or cc:/rde/) and tag:unread")
 
-     ;; '(:name "Watching" :query "thread:{tag:watch} and tag:unread" :key "tw")
-     %rde-notmuch-saved-searches))
+;;      ;; '(:name "Watching" :query "thread:{tag:watch} and tag:unread" :key "tw")
+;;      %rde-notmuch-saved-searches))
 
    (feature-keyboard
     ;; To get all available options, layouts and variants run:
@@ -373,6 +451,90 @@ G9.lc/f.U9QxNW1.2MZdV1KzW6uMJ0t23KKoN/")
                      (id 'oftc)
                      (network "irc.oftc.net")
                      (nick "rde-user"))))))
+
+(define %andrewzhurov-features
+  (list
+   (feature-user-info
+    #:user-name "user1"
+    #:full-name "Andrew Zhurov"
+    #:email "zhurov.andrew@gmail.com"
+    ;; #:user-initial-password-hash
+    ;; "$6$abc$3SAZZQGdvQgAscM2gupP1tC.SqnsaLSPoAnEOb2k6jXMhzQqS1kCSplAJ/vUy2rrnpHtt6frW2Ap5l/tIvDsz."
+    #:emacs-advanced-user? #f)
+   (feature-gnupg
+    #:gpg-primary-key "AE2DD20B5BCB36A3")
+
+   (feature-custom-services
+    #:feature-name-prefix 'abcdw
+    #:home-services
+    (list
+     emacs-extra-packages-service
+     home-extra-packages-service
+     sway-extra-config-service
+     ssh-extra-config-service
+     i2pd-add-ilita-irc-service))
+
+   (feature-xdg
+    #:xdg-user-directories-configuration
+    (home-xdg-user-directories-configuration
+     (music "$HOME/music")
+     (videos "$HOME/vids")
+     (pictures "$HOME/pics")
+     (documents "$HOME/docs")
+     (download "$HOME/dl")
+     (desktop "$HOME")
+     (publicshare "$HOME")
+     (templates "$HOME")))
+
+   (feature-yggdrasil)
+   (feature-i2pd
+    #:outproxy 'http://acetone.i2p:8888
+    ;; 'purokishi.i2p
+    #:less-anonymous? #t)
+
+   (feature-emacs-keycast #:turn-on? #f)
+
+   (feature-emacs-tempel
+    #:default-templates? #t
+    #:templates
+    `(fundamental-mode
+      ,#~""
+      (t (format-time-string "%Y-%m-%d"))
+      ;; TODO: Move to feature-guix
+      ;; ,((@ (rde gexp) slurp-file-like)
+      ;;   (file-append ((@ (guix packages) package-source)
+      ;;                 (@ (gnu packages package-management) guix))
+      ;;                "/etc/snippets/tempel/text-mode"))
+      ))
+   (feature-emacs-spelling
+    #:spelling-program (@ (gnu packages libreoffice) hunspell)
+    #:spelling-dictionaries (strings->packages
+                             "hunspell-dict-en"
+                             "hunspell-dict-ru"))
+   (feature-emacs-git
+    #:project-directory "~/work")
+   (feature-emacs-org
+    #:org-directory "~/notes/org-roam"
+    #:org-indent? #f
+    #:org-capture-templates
+    `(("t" "Todo" entry (file+headline "" "Tasks") ;; org-default-notes-file
+       "* TODO %?\nSCHEDULED: %t\n%U\n%a\n" :clock-in t :clock-resume t)))
+   (feature-emacs-org-roam
+    ;; TODO: Rewrite to states
+    #:org-roam-directory "~/notes/org-roam")
+   (feature-emacs-org-agenda
+    #:org-agenda-files '("~/notes/org-roam"
+                         "~/notes/org-roam/daily"))
+
+   (feature-javascript)
+
+   (feature-keyboard
+    ;; To get all available options, layouts and variants run:
+    ;; cat `guix build xkeyboard-config`/share/X11/xkb/rules/evdev.lst
+    #:keyboard-layout
+    (keyboard-layout
+     "us,ru" "dvorak,"
+     #:options '("grp:shifts_toggle" "ctrl:nocaps")))))
 
 
 ;;; Some TODOs
@@ -505,6 +667,23 @@ G9.lc/f.U9QxNW1.2MZdV1KzW6uMJ0t23KKoN/")
   (rde-config-operating-system live-config))
 
 
+;;; t450
+
+(define-public t450-config
+  (rde-config
+   (features
+    (append
+     %abcdw-features
+     %all-features
+     %t450-features))))
+
+(define-public t450-os
+  (rde-config-operating-system t450-config))
+
+(define-public t450-he
+  (rde-config-home-environment t450-config))
+
+
 ;;; Dispatcher, which helps to return various values based on environment
 ;;; variable value.
 
@@ -514,6 +693,8 @@ G9.lc/f.U9QxNW1.2MZdV1KzW6uMJ0t23KKoN/")
       ("ixy-home" ixy-he)
       ("ixy-system" ixy-os)
       ("live-system" live-os)
-      (_ ixy-he))))
+      ("t450-home" t450-he)
+      ("t450-system" t450-os)
+      (_ t450-he))))
 
 (dispatcher)

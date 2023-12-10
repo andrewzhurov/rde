@@ -59,7 +59,10 @@
         config
         `((with-eval-after-load
            'ledger-mode
-           (setq ledger-default-date-format ledger-iso-date-format)))
+
+           (setq ledger-default-date-format ledger-iso-date-format)
+           (add-to-list 'ledger-reports '("bal(custom)" "%(binary) -f %(ledger-file) bal --flat --exchange USD not ^magicbin")
+                        t)))
         #:summary "\
 Tweaks for ledger-mode"
         #:commentary "\

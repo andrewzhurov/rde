@@ -2,6 +2,7 @@
   #:use-module (rde features)
   #:use-module (rde features emacs)
   #:use-module (rde features predicates)
+  #:use-module (rde packages clojure)
   #:use-module (gnu services)
   #:use-module (gnu home services)
   #:use-module (gnu home services shepherd)
@@ -19,7 +20,7 @@
 (define* (feature-clojure
           #:key
           (clojure-tools-cli clojure-tools-cli)
-          (clojure-lsp #f)
+          (clojure-lsp (@ (rde packages clojure) clojure-lsp))
           (eglot-stay-out-of '())
           (jdk (list openjdk17 "jdk")))
   "Setup and configure environment for Clojure. "
@@ -141,7 +142,10 @@
 
           (with-eval-after-load
            'clojure-mode
-           (setq clojure-align-forms-automatically t)))
+           (setq clojure-align-forms-automatically t)
+           (add-hook 'clojure-mode 'eglot-ensure)
+           (add-hook 'clojurec-mode 'eglot-ensure)
+           (add-hook 'clojurescript-mode 'eglot-ensure)))
         #:summary "\
 Clojure(Script) code style, CIDER, LSP, imenu and other tweaks"
         #:commentary "\
