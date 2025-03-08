@@ -27,7 +27,9 @@
   #:use-module (guix utils)
   #:use-module (guix download)
   #:use-module (guix git-download)
-  #:export (guix-from-channels-lock))
+  #:export (guix-from-channels-lock)
+  ;; #:export (nonguix-from-channels-lock)
+  )
 
 (define-public guix-from-channels-lock
   (let ((commit "59b2a60d0041882d732e1766e28f0df5a1ef1ac1"))
@@ -54,3 +56,22 @@
 
       (inputs (modify-inputs (package-inputs guix)
                 (replace "guile" guile-next))))))
+
+;; (define-public nonguix-from-channels-lock
+;;   (let ((commit "b6d05dbefd2664aa6706d13ec4f46526a814369f"))
+;;     (package
+;;       (inherit nonguix)
+;;       (version (string-append "1.4.0-" (string-take commit 7)))
+;;       (source (origin
+;;                 (method git-fetch)
+;;                 (uri (git-reference
+;;                       (url "https://gitlab.com/nonguix/nonguix"
+;;                        ;; (channel-url pinned-channel-guix)
+;;                        )
+;;                       (commit commit)))
+;;                 (sha256
+;;                  (base32
+;;                   "03z38k828ismsbfwvpwiqr557vlhdg0vg7dpvyqbvyhfy8l6c27w"))
+;;                 (file-name (string-append "nonguix-" version "-checkout"))))
+;;       (arguments (list #:tests? #f))
+;;       (inputs (package-inputs nonguix)))))

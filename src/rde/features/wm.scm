@@ -52,15 +52,19 @@
   #:use-module (gnu home services pm)
   #:use-module (rde home services wm)
   #:use-module (rde home services shells)
+  #:use-module (gnu packages image) ;; for slurp
 
   #:use-module (guix gexp)
   #:use-module (guix packages)
 
   #:use-module (srfi srfi-1)
 
+  #:use-module (gnu packages video)
+
   #:export (feature-sway
             feature-sway-run-on-tty
             feature-sway-screenshot
+            feature-sway-screenrecord
 
             feature-sway-statusbar
             feature-waybar
@@ -223,8 +227,8 @@
             (bindsym --to-code $mod+Shift+f fullscreen)
             (bindsym --to-code $mod+Control+c kill)
             (bindsym --to-code $mod+Control+f fullscreen)
-            (bindsym $mod+Shift+space floating toggle)
-            (bindsym $mod+Ctrl+space focus mode_toggle)
+            ;; (bindsym $mod+Shift+space floating toggle)
+            ;; (bindsym $mod+Ctrl+space focus mode_toggle)
 
             ;; (bindsym --to-code $mod+Shift+o
             ;;          #{[workspace=__focused__]}# focus next)
@@ -237,13 +241,46 @@
             (bindsym $mod+Up focus up)
             (bindsym $mod+Right focus right)
 
-            (bindsym $mod+Shift+Left move left)
-            (bindsym $mod+Shift+Down move down)
-            (bindsym $mod+Shift+Up move up)
-            (bindsym $mod+Shift+Right move right)
+            ;; (bindsym $mod+Shift+Left move left)
+            ;; (bindsym $mod+Shift+Down move down)
+            ;; (bindsym $mod+Shift+Up move up)
+            ;; (bindsym $mod+Shift+Right move right)
 
             (,#~"\n\n# Moving around workspaces:")
             (bindsym $mod+tab workspace back_and_forth)
+
+            ;; (workspace_layout tabbed)
+
+            ;; (bindsym --to-code $mod+b+p workspace number 1)
+            ;; (bindsym --to-code $mod+f+p workspace number 3)
+            ;; (bindsym --to-code $mod+n+b workspace number 7)
+            ;; (bindsym --to-code $mod+f+n workspace number 9)
+
+            ;; (bindsym --to-code $mod+p workspace number 2)
+            ;; (bindsym --to-code $mod+b workspace number 4)
+            ;; ;; (bindsym $mod workspace number 5)
+            ;; (bindsym --to-code $mod+f workspace number 6)
+            ;; (bindsym --to-code $mod+n workspace number 8)
+
+
+            (set $mode_navigation_fp "navigation_fp")
+            (mode $mode_navigation_fp
+              ((bindsym --to-code f workspace number 24)
+               (bindsym Escape mode "default")))
+
+            (set $mode_navigation_f "navigation_f")
+            (mode $mode_navigation_f
+              ((bindsym --to-code p mode $mode_navigation_fp)
+               (bindsym Escape mode "default")))
+
+            (set $mode_navigation_top "navigation")
+            (mode $mode_navigation_top
+              ((bindsym --to-code f mode $mode_navigation_f)
+               (bindsym Escape mode "default")))
+            (bindsym $mod+ctrl+t mode $mode_navigation_top)
+
+            ;; TODO consider having 3rd dimension with Elevate and lOwer
+
             ,@(append-map
                (lambda (x)
                  `((bindsym ,(format #f "$mod+~a" (modulo x 10))
@@ -611,17 +648,16 @@ module will be added to the BAR-ID."
           (bar-id 'main)
           (persistent-workspaces '())
           (all-outputs? #f)
-          (format-icons '(("1" . )
-                          ("2" . )
-                          ("3" . )
-                          ("4" . )
-                          ("5" . )
-                          ("6" . )  ; 
-                          ("7" . )  ; 
-                          ("8" . )
-                          ("9" . )
-                          ("10" . )
-
+          (format-icons '(("1" . "1")
+                          ("2" . "2")
+                          ("3" . "3")
+                          ("4" . "4")
+                          ("5" . "5")
+                          ("6" . "6")  ; 
+                          ("7" . "7")  ; 
+                          ("8" . "8")
+                          ("9" . "9")
+                          ("10" . "10")
                           ("urgent" . )
                           ;; ("focused" . )
                           ("default" . ))))
@@ -1072,7 +1108,7 @@ for the main bar."
 (define* (feature-swayidle
           #:key
           (swayidle swayidle)
-          (lock-timeout 240)
+          (lock-timeout 480)
           (extra-config '()))
   "Configure swayidle."
   (ensure-pred file-like? swayidle)
@@ -1274,3 +1310,228 @@ to use this functionality."
 
 
 ;; window rules will configured on app's feature basis
+
+
+
+;;;
+;;; sway-screenrecord
+;;;
+
+(define* (feature-sway-screenrecord)
+  "Register shortcut for taking an .mp4 out of a screen area.
+   Hit once and select to record. Hit again to stop.
+   Record is stored under /tmp/record.mp4 and is overriden on every record.
+   Record also is copied to clipboard via wl-copy."
+
+  (define sway-f-name 'screenrecord)
+  (define f-name (symbol-append 'sway- sway-f-name))
+
+  (define (get-home-services config)
+    ;; (require-value 'sway config) ;; can it work without sway?
+
+    (define toggle-recording-selection
+      (program-file
+       "toggle-recording-selection"
+       #~(system
+          (let* ((slurp-bin       #$(file-append slurp "/bin/slurp"))
+                 (wf-recorder-bin #$(file-append wf-recorder "/bin/wf-recorder"))
+                 (pkill-bin       #$(file-append procps "/bin/pkill"))
+                 (ffmpeg-bin      #$(file-append ffmpeg "/bin/ffmpeg"))
+
+                 (start-recording-selection
+                  ;; based on: https://www.reddit.com/r/swaywm/comments/vr78q2/comment/ietenv2/?utm_source=share&utm_medium=web2x&context=3
+                  ;; TODO: get bin paths from config
+                  ;; TODO: copy recording to clipboard
+                  ;; MAYBE: Make storage location configurable
+                  ;; MAYBE: Upload to IPFS and (optionally) encrypt, copy link to clipboard. Handy for pasting stuff into a personal knowledge management system.
+                  (format #f "~a; ~a; ~a; ~a; ~a; ~a"
+                          "rm /tmp/record.mp4 || true"
+                          "rm /tmp/record.gif || true"
+                          "rm /tmp/record-palette.png || true"
+                          (string-append wf-recorder-bin " -g \"$(" slurp-bin ")\" -f /tmp/record.mp4")
+                          (string-append ffmpeg-bin " -i /tmp/record.mp4 -filter_complex  \"fps=15,palettegen=stats_mode=full\" /tmp/record-palette.png -y")
+                          (string-append ffmpeg-bin " -i /tmp/record.mp4 -i /tmp/record-palette.png -filter_complex \"[0]fps=15[scaled];[scaled][1]paletteuse=dither=sierra2_4a\" /tmp/record.gif -y")))
+
+                 (stop-recording-selection
+                  ;; wf-recorder expects to be told to stop via Ctrl+C, as described in it's help
+                  ;; Ctrl+C sends SIGINT signal to the running process, source: https://frameboxxindore.com/linux/what-does-ctrl-c-do-in-linux-terminal.html
+                  (string-append pkill-bin " --signal SIGINT wf-recorder") ;; returns exit status 1 if recording has not been started
+
+                  ;; An alternative is to obtain PID and stop by it.
+                  ;; SIGINT can be sent via `kill -2 <PID>`
+                  ;; PID can be obtained via `pidoff <process name>`, source: https://askubuntu.com/a/925014
+                  ;; Something along these linkes:
+                  ;; (does not work due to bad passage of the PID arg to kill)
+                  ;; "pidoff wf-recorder || kill -2 "
+                  ))
+            (format #f
+                    ;; either stop running recording process or start it
+                    "if ~a; then echo \"Recording stopped.\"; else ~a; fi"
+                    stop-recording-selection
+                    start-recording-selection)))))
+
+    (list
+     (simple-service
+      'sway-screenrecord-add-packages
+      home-profile-service-type
+      (list procps ;; for pkill
+            wf-recorder
+            ffmpeg))
+     (simple-service
+      'sway-screenrecord
+      home-sway-service-type
+      ;; TODO: Make Ctrl a screenrecord-key
+      ;; TODO: Use screenshot-key instead of Print, take it from env
+      `((bindsym Ctrl+Shift+$mod+Print
+                 exec ,toggle-recording-selection)))))
+
+  (feature
+   (name f-name)
+   (values `((,f-name . #t)))
+   (home-services-getter get-home-services)))
+
+;; Playing with (invoke)
+;;
+;; (use-modules (rde api store)
+;;              (guix build utils))
+;; (use-modules (ice-9 popen)
+;;              (ice-9 textual-ports)) ; for get-string-all
+
+;; (define ls (open-pipe* OPEN_READ "/gnu/store/bkwlcqsczysr0y7q6a0vq2qn56cw7gwx-slurp-1.5.0/bin/slurp"))
+;; (display) (get-line ls)
+;; (close-pipe ls)
+
+;; (define* (shell-util package #:optional (bin-target (package-name package)))
+;;   #~(let ((util-path #$(file-append package (string-append "/bin/" bin-target))))
+;;       (lambda* (#:rest args)
+;;         (apply invoke util-path args))))
+;; (system* "/gnu/store/bkwlcqsczysr0y7q6a0vq2qn56cw7gwx-slurp-1.5.0/bin/slurp")
+;; ;; ((eval-with-store (shell-util coreutils "ls")))
+;; ;; ((eval-with-store (shell-util slurp)))
+;; ((eval-with-store (shell-util procps "pkill")) "--signal" "SIGINT" "wf-recorder")
+;; ((eval-with-store (shell-util procps "pidof")) "foott")
+
+;; (use-modules (ice-9 match))
+;; (define* (! program-desc)
+;;   (match program-desc
+;;     ((? package? p) #~#$(file-append p (string-append "/bin/" (package-name p))))
+;;     ((? list?    l) #~#$(file-append (first l) (string-append "/bin/" (second l))))
+;;     ((? string?  s) s)))
+
+;; (define* ($ program #:rest args)
+;;   (apply system* program args))
+
+;; (eval-with-store #~($ (! slurp)))
+
+;; (define* (temp #:rest args) args)
+;; (temp)
+
+;; (eval-with-store ($ slurp "123"))
+
+;; (program-desc->program "/bin/ls")
+;; (eval-with-store (program-desc->program wf-recorder))
+;; (eval-with-store (program-desc->program `(,coreutils "ls")))
+
+;; (define* (feature-sway-screenrecord
+;;           #:key
+;;           (record-path "/tmp/record.mp4"))
+;;   "Register shortcut for taking an .mp4 out of a screen area.
+;;    Hit once and select to record. Hit again to stop.
+;;    Record is stored under /tmp/record.mp4 and is overriden on every record.
+;;    Record also is copied to clipboard via wl-copy."
+
+;;   (define sway-f-name 'screenrecord)
+;;   (define f-name (symbol-append 'sway- sway-f-name))
+
+;;   (define (get-home-services config)
+;;     ;; (require-value 'sway config) ;; can it work without sway?
+
+;;     (define (toggle-recording-selection
+;;              #:key
+;;              (audio? #f))
+;;       (program-file
+;;        "toggle-recording-selection"
+;;        #~(system
+;;           (let* ((*rm             (shell-util coreutils "rm"))
+;;                  (*slurp          (shell-util slurp))
+;;                  (*wf-recorder    (shell-util wf-recorder))
+;;                  (*ffmpeg         (shell-util ffmpeg))
+;;                  (*$pkill          (shell-util procps "pkill"))
+
+;;                  (start-recording-selection
+;;                   ;; based on: https://www.reddit.com/r/swaywm/comments/vr78q2/comment/ietenv2/?utm_source=share&utm_medium=web2x&context=3
+;;                   ;; TODO: copy recording to clipboard
+;;                   ;; MAYBE: Make storage location configurable
+;;                   ;; MAYBE: Upload to IPFS and (optionally) encrypt, copy link to clipboard. Handy for pasting stuff into a personal knowledge management system.
+
+;;                   ($rm record-path)
+;;                   ($rm "/tmp/record.gif")
+;;                   ($rm "/tmp/record-palette.png")
+;;                   (let ((geometry ($slurp)))
+;;                     ($wf-recorder
+;;                      "-g" geometry
+;;                      "-f" record-path
+;;                      (if audio? "-a" ""))
+;;                     ($ffmpeg
+;;                      "-i" record-path
+;;                      "-filter_complex" "\"fps=30,palettegen=stats_mode=full\""
+;;                      "/tmp/record-palette.png"
+;;                      "-y")
+;;                     ($ffmpeg
+;;                      "-i" record-path
+;;                      "-i" "/tmp/record-palette.png"
+;;                      "-filter_complex" "\"[0]fps=30[scaled];[scaled][1]paletteuse=dither=sierra2_4a\""
+;;                      "/tmp/record.gif"
+;;                      "-y"))
+
+;;                   ;; (format #f "~a; ~a; ~a; ~a; ~a; ~a"
+;;                   ;;         "rm /tmp/record.mp4 || true"
+;;                   ;;         "rm /tmp/record.gif || true"
+;;                   ;;         "rm /tmp/record-palette.png || true"
+;;                   ;;         (string-append wf-recorder-bin " -g \"$(" slurp-bin ")\" -f /tmp/record.mp4")
+;;                   ;;         (string-append ffmpeg-bin " -i /tmp/record.mp4 -filter_complex  \"fps=15,palettegen=stats_mode=full\" /tmp/record-palette.png -y")
+;;                   ;;         (string-append ffmpeg-bin " -i /tmp/record.mp4 -i /tmp/record-palette.png -filter_complex \"[0]fps=15[scaled];[scaled][1]paletteuse=dither=sierra2_4a\" /tmp/record.gif -y"))
+;;                   )
+
+;;                  (stop-recording-selection
+;;                   ;; wf-recorder expects to be told to stop via Ctrl+C, as described in it's help
+;;                   ;; Ctrl+C sends SIGINT signal to the running process, source: https://frameboxxindore.com/linux/what-does-ctrl-c-do-in-linux-terminal.html
+;;                   ($pkill
+;;                    "--signal" "SIGINT"
+;;                    "wf-recorder")
+;;                   ;; returns exit status 1 if recording has not been started
+
+;;                   ;; An alternative is to obtain PID and stop by it.
+;;                   ;; SIGINT can be sent via `kill -2 <PID>`
+;;                   ;; PID can be obtained via `pidoff <process name>`, source: https://askubuntu.com/a/925014
+;;                   ;; Something along these linkes:
+;;                   ;; (does not work due to bad passage of the PID arg to kill)
+;;                   ;; "pidoff wf-recorder || kill -2 "
+;;                   ))
+;;             (format #f
+;;                     ;; either stop running recording process or start it
+;;                     "if ~a; then echo \"Recording stopped.\"; else ~a; fi"
+;;                     stop-recording-selection
+;;                     start-recording-selection)))))
+
+;;     (list
+;;      (simple-service
+;;       'sway-screenrecord-add-packages
+;;       home-profile-service-type
+;;       (list procps ;; for pkill
+;;             wf-recorder
+;;             ffmpeg))
+;;      (simple-service
+;;       'sway-screenrecord
+;;       home-sway-service-type
+;;       ;; TODO: Make Ctrl a screenrecord-key
+;;       ;; TODO: Use screenshot-key instead of Print, take it from env
+;;       `((bindsym Ctrl+Shift+$mod+Print
+;;                  exec ,(toggle-recording-selection #:audio? #f))
+;;         (bindsym Tab+Ctrl+Shift+$mod+Print
+;;                  exec ,(toggle-recording-selection #:audio? #t))))))
+
+;;   (feature
+;;    (name f-name)
+;;    (values `((,f-name . #t)))
+;;    (home-services-getter get-home-services)))

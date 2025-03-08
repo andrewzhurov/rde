@@ -79,7 +79,8 @@ really know what you do."))
        "\
 HOME_ENVIRONMENT=$HOME/.guix-home
 . $HOME_ENVIRONMENT/setup-environment
-$HOME_ENVIRONMENT/on-first-login\n"
+$HOME_ENVIRONMENT/on-first-login\n
+export AWS_PROFILE=jra\n"
        (serialize-configuration
         config
         (filter-configuration-fields

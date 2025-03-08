@@ -43,7 +43,8 @@
   #:use-module (rde features virtualization)
   #:use-module (rde features web-browsers)
   #:use-module (rde features wm)
-  #:use-module (rde features xdg))
+  #:use-module (rde features xdg)
+  #:use-module (guix gexp))
 
 ;;;
 ;;; Various lists of features with predefined values.
@@ -52,7 +53,7 @@
 (define-public rde-base
   (list
    ;; TODO: merge them into feature-base (maybe using super-feature)
-   (feature-base-services)
+   ;; (feature-base-services)
    (feature-base-packages)
    (feature-desktop-services)
    (feature-xdg)
@@ -85,8 +86,16 @@
    (feature-batsignal)
    (feature-imv)
    (feature-mpv)
-   (feature-librewolf)
-   (feature-ungoogled-chromium)
+   ;; (feature-librewolf)
+   (feature-ungoogled-chromium
+    #:default-browser? #t
+    #:default-startup-flags '( ;; taken from default value, may get outdated
+                              "--user-data-dir=$XDG_DATA_HOME/chromium"
+                              ;; required by chromium-web-store
+                              ;; https://github.com/NeverDecaf/chromium-web-store?tab=readme-ov-file#installation
+                              "--extension-mime-request-handling=always-prompt-for-install"
+                              ;; May prevent freezing of PDF viewer, https://issues.chromium.org/issues/41496556
+                              "--disable-renderer-accessibility"))
   (feature-transmission #:auto-start? #f)
   (feature-ledger)))
 
@@ -112,7 +121,8 @@
 (define-public rde-emacs
   (list
    (feature-emacs
-    #:default-application-launcher? #t)
+    #:default-application-launcher? #f
+    #:extra-init-el `((load ,(local-file "./tmp.el"))))
 
    (feature-emacs-appearance)
    (feature-emacs-modus-themes)
@@ -136,9 +146,9 @@
    (feature-emacs-monocle)
 
    (feature-emacs-message)
-   (feature-emacs-erc
-    #:erc-log? #t
-    #:erc-autojoin-channels-alist '((Libera.Chat "#rde")))
+   ;; (feature-emacs-erc
+   ;;  #:erc-log? #t
+   ;;  #:erc-autojoin-channels-alist '((Libera.Chat "#rde")))
    (feature-emacs-telega)
    (feature-emacs-elpher)
    (feature-emacs-webpaste)

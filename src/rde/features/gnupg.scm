@@ -22,6 +22,7 @@
   #:use-module (rde features)
   #:use-module (gnu packages gnupg)
   #:use-module (gnu services)
+  #:use-module (gnu home services)
   #:use-module (gnu home-services gnupg)
   #:use-module (rde home services wm)
   #:use-module (rde home services shells)
@@ -51,12 +52,20 @@ and provides GPG-PRIMARY-KEY value for other features."
   (ensure-pred ssh-keys-list? ssh-keys)
   (ensure-pred file-like? gnupg)
 
+  (define pinentry-package-sym (symbol-append 'pinentry- pinentry-flavor))
+  (define pinentry-package (module-ref (resolve-module '(gnu packages gnupg))
+                                       pinentry-package-sym))
+
   (define rde-emacs-service-type
     (make-home-elisp-service-type 'rde-emacs-gnupg))
 
   (define (home-gnupg-services config)
     "Return a list of home-services, required for gnupg to operate."
     (list
+     (simple-service
+      'gnupg-add-packages
+      home-profile-service-type
+      (list pinentry-package))
      (service
       rde-emacs-service-type
       (home-elisp-configuration

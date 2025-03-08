@@ -22,6 +22,7 @@
   #:use-module (rde features)
   #:use-module (rde features emacs)
   #:use-module (rde features predicates)
+  #:use-module (rde packages clojure)
   #:use-module (gnu services)
   #:use-module (gnu home services)
   #:use-module (gnu home services shepherd)
@@ -35,12 +36,69 @@
 
 ;; https://practical.li/spacemacs/ :: some emacs clojure tips
 
+;; (define-public clojure-tools
+;;   (package
+;;     (name "clojure-tools")
+;;     (version "1.11.3.1463")
+;;     (source
+;;      (origin
+;;        (method url-fetch)
+;;        (uri (string-append "https://download.clojure.org/install/clojure-tools-"
+;;                            version
+;;                            ".tar.gz"))
+;;        (sha256 (base32 "1q0z71ifdxwvyy9gvq8mx8jbygf8cszrlhb3h22walfamnisbhwk"))
+;;        ;; Remove AOT compiled JAR.  The other JAR only contains uncompiled
+;;        ;; Clojure source code.
+;;        (snippet
+;;         `(delete-file ,(string-append "clojure-tools-" version ".jar")))))
+;;     (build-system copy-build-system)
+;;     (arguments
+;;      `(#:install-plan
+;;        '(("deps.edn" "lib/clojure/")
+;;          ("example-deps.edn" "lib/clojure/")
+;;          ("tools.edn" "lib/clojure/")
+;;          ("exec.jar" "lib/clojure/libexec/")
+;;          ("clojure" "bin/")
+;;          ("clj" "bin/"))
+;;        #:modules ((guix build copy-build-system)
+;;                   (guix build utils)
+;;                   (srfi srfi-1)
+;;                   (ice-9 match))
+;;        #:phases
+;;        (modify-phases %standard-phases
+;;          (add-after 'unpack 'fix-paths
+;;            (lambda* (#:key outputs #:allow-other-keys)
+;;              (substitute* "clojure"
+;;                (("PREFIX") (string-append (assoc-ref outputs "out") "/lib/clojure")))
+;;              (substitute* "clj"
+;;                (("BINDIR") (string-append (assoc-ref outputs "out") "/bin"))
+;;                (("rlwrap") (which "rlwrap")))))
+;;          (add-after 'fix-paths 'copy-tools-deps-alpha-jar
+;;            (lambda* (#:key inputs outputs #:allow-other-keys)
+;;              (substitute* "clojure"
+;;                (("\\$install_dir/libexec/clojure-tools-\\$version\\.jar")
+;;                 (string-join
+;;                  (append-map (match-lambda
+;;                                ((label . dir)
+;;                                 (find-files dir "\\.jar$")))
+;;                              inputs)
+;;                  ":"))))))))
+;;     (inputs (list rlwrap
+;;                   clojure
+;;                   clojure-tools-deps
+;;                   java-commons-logging-minimal))
+;;     (home-page "https://clojure.org/releases/tools")
+;;     (synopsis "CLI tools for the Clojure programming language")
+;;     (description "The Clojure command line tools can be used to start a
+;; Clojure repl, use Clojure and Java libraries, and start Clojure programs.")
+;;     (license license:epl1.0)))
+
 (define* (feature-clojure
           #:key
           (clojure-tools clojure-tools)
-          (clojure-lsp #f)
+          (clojure-lsp (@ (rde packages clojure) clojure-lsp))
           (eglot-stay-out-of '(flymake eldoc))
-          (jdk (list openjdk17 "jdk"))
+          (jdk (list jbr21 "jdk"))
           (clj-deps-new-key "J")
           (leiningen #f))
   "Setup and configure an environment for Clojure.
@@ -72,7 +130,7 @@ If you want Leiningen support, make sure to pass in the LEININGEN package."
           ;; for go-to-definition
           ;; MAYBE: Add as a dependency to cider?
           (@ (gnu packages compression) unzip)
-          clojure-tools
+          clojure-tools ;; broken as of 2024-07-14
           jdk))))
       (if leiningen
           (list
@@ -139,7 +197,8 @@ If you want Leiningen support, make sure to pass in the LEININGEN package."
               (add-hook 'after-init-hook 'jarchive-setup)
 
               (with-eval-after-load 'cider
-                (setq cider-allow-jack-in-without-project t))
+                (setq cider-allow-jack-in-without-project t)
+                (setq cider-offer-to-open-cljs-app-in-browser nil))
 
               (with-eval-after-load 'cider-mode
                 ;; Make cider-completion work together with orderless and eglot
@@ -205,7 +264,14 @@ If you want Leiningen support, make sure to pass in the LEININGEN package."
                     '())
 
               (with-eval-after-load 'clojure-mode
-                (setq clojure-align-forms-automatically t)))
+                (setq clojure-align-forms-automatically t)
+                (add-hook 'clojure-mode-hook 'eglot-ensure)
+
+                (require 'flymake-kondor)
+                (with-eval-after-load 'flymake-kondor
+                  (add-hook 'clojure-mode-hook       'flymake-kondor-setup)
+                  (add-hook 'clojure-mode-hook       (lambda () (flymake-mode t)))))
+              (require 'clojure-mode))
             #:summary "\
 Clojure(Script) code style, CIDER, LSP, imenu and other tweaks"
             #:commentary "\
@@ -215,7 +281,8 @@ Configure eglot, imenu, CIDER, flymake and other packages.
             #:elisp-packages
             (list emacs-cider emacs-clojure-mode
                   emacs-jarchive emacs-html-to-hiccup
-                  emacs-clj-deps-new)))
+                  emacs-clj-deps-new
+                  emacs-flymake-kondor)))
           '())))
 
   (feature

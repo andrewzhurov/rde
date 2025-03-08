@@ -368,3 +368,212 @@ programming language, powered by the tree-sitter-clojure tree-sitter grammar."))
  from a url and save it into a bibtex file. It also provides a way to obtain a
  list of attachments (e.g. PDF files) associated with a url. This is done
  using Zotero translators, but without using the Zotero client."))))
+
+;; Andrew Zhurov's sandbox
+(use-modules (guix download))
+
+(define-public emacs-flycheck-clj-kondo-ff7bed
+  (let* ((commit "ff7bed2315755cfe02ef471edf522e27b78cd5ca")
+         (revision "0"))
+    (package
+      (name "emacs-flycheck-clj-kondo")
+      (version (git-version "0.0.3" revision commit)) ;; latest as of 2022-08-23
+      (source
+       (origin
+         (method git-fetch)
+         (uri  (git-reference
+                (url "https://github.com/borkdude/flycheck-clj-kondo")
+                (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "0h0cbiifzjfm5ymwf98h6nlkaqavdlxvccdsb1h0yf4246scf251"))))
+      (inputs
+       (list emacs-flycheck))
+      (build-system emacs-build-system)
+      (home-page "https://github.com/borkdude/flycheck-clj-kondo")
+      (synopsis
+       "Emacs integration for clj-kondo via flycheck")
+      (description
+       "This package integrates clj-kondo with Emacs via flycheck.")
+      (license license:epl1.0) ;; presumably the same as for clj-kondo, but it's not set explicitly in the project repo
+      )))
+
+(define-public emacs-flycheck-clj-kondo-e38c67
+  (let* ((commit "e38c67ba9db1ea1cbe1b61ab39b506c05efdcdbf")
+         (revision "0"))
+    (package
+      (name "emacs-flycheck-clj-kondo")
+      (version (git-version "2024-02-19" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri  (git-reference
+                (url "https://github.com/borkdude/flycheck-clj-kondo")
+                (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "1pxlb8axgmc8cw4id40z576kd041qb1irq8rkjn6xbda585ix58f"))))
+      (inputs
+       (list emacs-flycheck))
+      (build-system emacs-build-system)
+      (home-page "https://github.com/borkdude/flycheck-clj-kondo")
+      (synopsis
+       "Emacs integration for clj-kondo via flycheck")
+      (description
+       "This package integrates clj-kondo with Emacs via flycheck.")
+      (license license:epl1.0) ;; presumably the same as for clj-kondo, but it's not set explicitly in the project repo
+      )))
+
+(define-public emacs-flycheck-clj-kondo emacs-flycheck-clj-kondo-e38c67)
+;; (define-public emacs-flycheck-clj-kondo emacs-flycheck-clj-kondo-ff7bed)
+
+(define-public emacs-org-roam-ui
+  (package
+    (name "emacs-org-roam-ui")
+    (version "9ed0c5705a302a91fab2b8bcc777a12dcf9b3682")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/org-roam/org-roam-ui")
+             (commit "9ed0c5705a302a91fab2b8bcc777a12dcf9b3682")))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1am11vnzklv0cbivsw5r8x8fx457166mvfgyv7cdhrz88s8iqm23"))))
+    (build-system emacs-build-system)
+    (arguments
+     `(#:phases %standard-phases
+       #:include (cons "out" %default-include))) ;; "out" contains .js code, as mentioned here: https://github.com/org-roam/org-roam-ui/issues/77#issuecomment-907664589
+    (propagated-inputs
+     `(("emacs-org-roam" ,emacs-org-roam)
+       ("emacs-websocket" ,emacs-websocket)
+       ("emacs-simple-httpd" ,emacs-simple-httpd)
+       ("emacs-f" ,emacs-f)
+       ))
+    (home-page "https://github.com/org-roam/org-roam-ui")
+    (synopsis "A graphical frontend for exploring your org-roam Zettelkasten")
+    (description "Org-Roam-UI is a frontend for exploring and interacting with your org-roam notes.
+
+Org-Roam-UI is meant a successor of org-roam-server that extends functionality of org-roam with a Web app that runs side-by-side with Emacs.")
+       (license license:gpl3+))) ;; actually it's GPL3.0
+
+(define-public emacs-flymake-clippy
+  (package
+    (name "emacs-flymake-clippy")
+    (version "9ed0c5705a302a91fab2b8bcc777a12dcf9b3682")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/emacsmirror/flymake-clippy")
+             (commit "713b7e873d6b30dc0ded75d5d890d6847f2ea093")))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "097yha74kabxzyf6zqdi94wxjs7zdsg38nxwz1w4w86wxlrq0ymg"))))
+    (build-system emacs-build-system)
+    (arguments
+     `(#:phases %standard-phases
+       #:include (cons "out" %default-include)))
+    (home-page "https://github.com/emacsmirror/flymake-clippy")
+    (synopsis "")
+    (description "")
+    (license license:gpl3+))) ;; GPL 3.0
+
+(define-public emacs-org-clipboard-image
+  (package
+   (name "emacs-org-clipboard-image")
+   (version "0.1.0")
+   (source
+    (local-file "../features/emacs/org-clipboard-image" #:recursive? #t))
+   (build-system emacs-build-system)
+   (propagated-inputs
+    `(("wl-clipboard" ,(@ (gnu packages xdisorg) wl-clipboard)) ;; for wl-paste
+      ("coreutils"    ,(@ (gnu packages base)    coreutils))    ;; for sha256sum
+      ("sed"          ,(@ (gnu packages base)    sed))          ;; for sed
+      ))
+   (license license:gpl3+)
+   (home-page "")
+   (synopsis "Save image from clipboard under a hash name and paste it as org image link.")
+   (description "")))
+
+(define-public emacs-org-media-note
+  (package
+    (name "emacs-org-media-note")
+    (version "2024-06-27")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/yuchen-lea/org-media-note")
+             (commit "1f5cc8d1bbbc1b2fc99d27ac753ad64a5c98c8c9")))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0mlqajlpnl5cn8ypc7ga4b8yq83fmsz5nvyynx1bfhp64p2f975y"))))
+    (build-system emacs-build-system)
+    (propagated-inputs
+     `(("emacs-mpv" ,(@ (gnu packages emacs-xyz) emacs-mpv))
+       ("emacs-org-ref" ,(@ (gnu packages emacs-xyz) emacs-org-ref))
+       ("emacs-pretty-hydra" ,(@ (gnu packages emacs-xyz) emacs-pretty-hydra))
+       ("mpv" ,(@ (gnu packages video) mpv))))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-before 'build 'debug
+           (lambda* (#:key outputs #:allow-other-keys)
+             (format #t "~a" outputs)))
+         (delete 'build))
+       #:include %default-include))
+    (home-page "https://github.com/yuchen-lea/org-media-note")
+    (synopsis "")
+    (description "Taking interactive notes when watching videos or listening to audios in org-mode.")
+    (license license:gpl3+))) ;; GPL 3.0
+
+(use-modules (rde api store))
+(build-with-store emacs-org-media-note)
+
+
+(use-modules (ice-9 pretty-print)
+             (ice-9 match)
+             (guix records)
+             (srfi srfi-197))
+
+'(package
+   emacs-org-media-note
+   (struct-layout (struct-vtable emacs-org-media-note))
+   (struct-vtable (struct-vtable emacs-org-media-note))
+   (record-type-fields (struct-vtable emacs-org-media-note))
+   (record-accessor (struct-vtable emacs-org-media-note) 'name)
+
+
+   (pretty-print '(1 2 (3 4 5) 6 7 8 9 0 11 12 13 14 15 16 17 18 19 20) (current-output-port))
+   (chain 1 (+ 2 _) (+ 3 _)))
+
+(define* (record->field+accessor rec)
+  (let* ((fields (record-type-fields (struct-vtable rec)))
+         (fields+accessors (map (lambda (field)
+                                   `(,field . ,(record-accessor (struct-vtable rec) field)))
+                                 fields)))
+    fields+accessors))
+
+(define* (record->alist rec)
+  (let* ((field+accessor (record->field+accessor rec))
+         (record-alist (map (match-lambda ((field . accessor)
+                                    `(,field . ,(accessor rec))))
+                     field+accessor)))
+    ;; (call-with-output-string (lambda (p) (object->fields rec field+accessor p)))
+    record-alist))
+
+(define* (pprint-record rec)
+  (chain rec
+         (record->alist _)
+         (pretty-print _)))
+
+'((pprint-record emacs-org-media-note)
+  (assoc-ref (record->alist emacs-org-media-note) 'name)
+
+
+  (list '(1 . 2))
+  (package-name emacs-org-media-note)
+  (object->string emacs-org-media-note))
