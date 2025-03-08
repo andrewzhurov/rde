@@ -134,7 +134,12 @@
             feature-emacs-nyxt
             feature-emacs-pulseaudio-control
             feature-emacs-webpaste
-            feature-emacs-display-wttr))
+            feature-emacs-display-wttr
+
+            ;; Andrew Zhurov's stuff
+            feature-emacs-org-roam-ui
+            feature-emacs-rust
+            feature-emacs-org-media-note))
 
 
 
@@ -2914,6 +2919,14 @@ on the current project."
             (call-interactively 'compile nil (and comint (vector (list 4))))))
 
         (setq rde-project-dominating-files ',project-extra-dominating-files)
+
+        ;; We need to ensure that 'project-try-vc is before the other.
+        ;; Otherwise projects are not considered version-controlled,
+        ;; and project.el won't use efficient files find via
+        ;; e.g., git ls-files, for git-versioned projects,
+        ;; instead doing a very slow FS tree scan, and disregarding .gitignore.
+        ;; To ensure order, explicit ordering arg is provided (asc order).
+        ;; https://www.gnu.org/software/emacs/manual/html_node/elisp/Setting-Hooks.html
         (add-hook 'project-find-functions 'project-try-vc -90)
         (add-hook 'project-find-functions 'rde-project-custom-root 50)
         (advice-add 'project-compile :override 'rde-project-compile)
@@ -4258,12 +4271,17 @@ Start an unlimited search at `point-min' otherwise."
 
          ;; TODO: Move to feature notmuch
          (with-eval-after-load 'notmuch (require 'ol-notmuch))
+         (with-eval-after-load 'org
+                               (add-to-list 'org-modules 'org-habit t))
+         (with-eval-after-load 'org
+                               (require 'org-habit))
+         (setq org-habit-graph-column 80)
 
          ;; TODO: [Andrew Tropin, 2024-07-12] Enable it back, when it fixed:
          ;; https://github.com/awth13/org-appear/issues/58
 
          ;; (add-hook 'org-mode-hook 'org-appear-mode)
-         (add-hook 'org-mode-hook 'olivetti-mode)
+         ;; (add-hook 'org-mode-hook 'olivetti-mode)
 
          (with-eval-after-load
           'org-modern
@@ -6264,3 +6282,77 @@ WTTR-LOCATIONS you will get a weather report based on your IP address."
    (home-services-getter get-home-services)))
 
 ;;; emacs-xyz.scm end here
+
+
+;; (define* (feature-emacs-org-roam-ui) ;; based on feature-emacs-org-roam
+;;   "Configure org-roam-ui for GNU Emacs."
+
+;;   (define emacs-f-name 'org-roam-ui)
+;;   (define f-name (symbol-append 'emacs- emacs-f-name))
+
+;;   (define (get-home-services config)
+;;     (list
+;;      (rde-elisp-configuration-service
+;;       emacs-f-name
+;;       config
+;;       `()
+;;       #:elisp-packages (list emacs-org-roam-ui))))
+
+;;   (feature
+;;    (name f-name)
+;;    (values `((,f-name . #t)))
+;;    (home-services-getter get-home-services)))
+
+;; ;; TODO: feature-emacs-reasonable-keybindings
+;; ;; TODO: Fix env vars for emacs daemon
+;; ;; https://github.com/purcell/exec-path-from-shell
+;; ;; TODO: feature-emacs-epub https://depp.brause.cc/nov.el/
+;; ;; TODO: feature-series-tracker https://github.com/MaximeWack/seriesTracker
+
+(define* (feature-emacs-rust)
+  "Configure rust for GNU Emacs."
+
+  (define emacs-f-name 'rust)
+  (define f-name (symbol-append 'emacs- emacs-f-name))
+
+  (define (get-home-services config)
+    (list
+     (rde-elisp-configuration-service
+      emacs-f-name
+      config
+      `()
+      #:elisp-packages (list emacs-rust-mode
+                             emacs-rustic
+                             emacs-eglot-x))))
+
+  (feature
+   (name f-name)
+   (values `((,f-name . #t)))
+   (home-services-getter get-home-services)))
+
+(define* (feature-emacs-org-media-note)
+  "Configure org-media-note for GNU Emacs."
+
+  (define emacs-f-name 'org-media-note)
+  (define f-name (symbol-append 'emacs- emacs-f-name))
+
+  (define (get-home-services config)
+    (list
+     (rde-elisp-configuration-service
+      emacs-f-name
+      config
+      `((require 'org-media-note-org-ref)
+        (setq org-media-note-screenshot-image-dir "~/notes/org-roam/store/mpv-screenshot/")  ;; Folder to save screenshot
+        )
+      #:elisp-packages (list emacs-org-media-note
+                             ;; org-ref
+                             ;; mpv.el
+                             ;; ytdl
+                             ))))
+
+  (feature
+   (name f-name)
+   (values `((,f-name . #t)))
+   (home-services-getter get-home-services)))
+
+feature-emacs-org-media-note

@@ -7,18 +7,31 @@ GUIX_PROFILE=target/profiles/guix
 GUIX=GUILE_LOAD_PATH="../src:../env:../tests:./src:./rde" GUILE_LOAD_COMPILED_PATH="" ${GUIX_PROFILE}/bin/guix
 
 SRC_DIR=./src
-CONFIGS=${SRC_DIR}/rde-configs/configs.scm
-PULL_EXTRA_OPTIONS=
-# --allow-downgrades
+CONFIGS=${SRC_DIR}/andrewzhurov/configs.scm
+PULL_EXTRA_OPTIONS=--allow-downgrades
 
 ROOT_MOUNT_POINT=/mnt
 
 VERSION=latest
 
+
 repl: ares
+auth-nonguix:
+	sudo guix archive --authorize < ./src/andrewzhurov/files/keys/nonguix-key.pub
+
+guix-sh:
+	${GUIX}
+
+guile-repl:
+	${GUIX} environment --ad-hoc guile -- ./pre-inst-env guile \
+	-L ../tests -L ../files/emacs/gider/src -L ../src -L ~/gits/guix/guix --listen=37146
+
+repl: ares
+	${GUIX} repl \
+	-L ../files/emacs/gider/src --listen=tcp:37146
 
 ares:
-	${GUIX} shell guile-next guile-ares-rs \
+	${GUIX} shell guile-next guile-ares-rs --substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.gnu.org https://ci.guix.trop.in' \
 	-e '(@ (rde packages package-management) guix-from-channels-lock)' \
 	-- guile \
 	-L ../src \
@@ -34,23 +47,19 @@ ixy/home/build: guix
 	RDE_TARGET=ixy-home ${GUIX} home \
 	build ${CONFIGS}
 
-ixy/home/reconfigure: guix
-	RDE_TARGET=ixy-home ${GUIX} home \
-	reconfigure ${CONFIGS}
+t450/home/reconfigure: guix
+	RDE_TARGET=t450-home ${GUIX} home \
+	reconfigure ${CONFIGS} --allow-downgrades --substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.trop.in' #    https://ci.guix.gnu.org
 
-ixy/system/build: guix
-	RDE_TARGET=ixy-system ${GUIX} system \
-	build ${CONFIGS}
-
-ixy/system/reconfigure: guix
-	RDE_TARGET=ixy-system ${GUIX} system \
-	reconfigure ${CONFIGS}
+t450/system/reconfigure: auth-nonguix guix
+	sudo RDE_TARGET=t450-system ${GUIX} system \
+	reconfigure ${CONFIGS} --allow-downgrades --substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.trop.in' # https://ci.guix.gnu.org
 
 cow-store:
 	sudo herd start cow-store ${ROOT_MOUNT_POINT}
 
-ixy/system/init: guix
-	RDE_TARGET=ixy-system ${GUIX} system \
+t450/system/init: guix
+	RDE_TARGET=t450-system ${GUIX} system \
 	init ${CONFIGS} ${ROOT_MOUNT_POINT}
 
 target:

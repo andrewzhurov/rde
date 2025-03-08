@@ -12,11 +12,22 @@
             (openpgp-fingerprint
               "BBB0 2DDF 2CEA F6A8 0D1D  E643 A2A0 6DF2 A33A 54FA"))))
       (channel
+        (name 'nonguix)
+        (url "https://gitlab.com/nonguix/nonguix")
+        (branch "master")
+        (commit
+          "7c1a45d8e71580fe45f75b4d7eba0a52eb2ed9b0")
+        (introduction
+          (make-channel-introduction
+            "ee2826e22be82ebd624b4daeadc6de97eaa69d02"
+            (openpgp-fingerprint
+              "2A39 3FFF 68F4 EF7A 3D29  12AF 6F51 20A0 22FB B2D5"))))
+      (channel
         (name 'rde)
         (url "https://git.sr.ht/~abcdw/rde")
         (branch "master")
         (commit
-          "eaf0ec48cb06ee5dea1f86a502255e14c2b3973b")
+          "079e3e4ee1072b06c2a22485aa0b821019975f19")
         (introduction
           (make-channel-introduction
             "257cebd587b66e4d865b3537a9a88cccd7107c95"

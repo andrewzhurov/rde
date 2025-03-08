@@ -193,8 +193,17 @@ source files.")
                                        libuv "/lib:"
                                        zlib "/lib"
                                        "'],"))))))
+               ;; (add-before 'patch-additional-hardcoded-program-references 'delete-problematic-test
+               ;;   (lambda* (#:key inputs #:allow-other-keys)
+               ;;     ;; "No such file or directory" on 'patch-additional-hardcoded-program-references'
+               ;;     (delete-file "test/parallel/test-stdin-from-file-spawn.js")))
+
+               (delete 'patch-additional-hardcoded-program-references)
+
                (replace 'delete-problematic-tests
                  (lambda* (#:key inputs #:allow-other-keys)
+
+
                    ;; FIXME: These tests fail in the build container, but they don't
                    ;; seem to be indicative of real problems in practice.
                    (for-each delete-file

@@ -10,6 +10,7 @@ QEMU_BASE_ARGS= \
 -vga none -device virtio-gpu-pci
 # -vga qxl
 
+default: examples/t450/home/reconfigure
 
 all: ares
 	@echo default target
@@ -30,11 +31,11 @@ ares:
 repl: ares-rs
 
 
-examples/ixy/home/reconfigure:
-	make -C examples ixy/home/reconfigure
+examples/t450/home/reconfigure:
+	make -C examples t450/home/reconfigure
 
 examples/ixy/home/build:
-	make -C examples ixy/home/build
+	make -C examples t450/home/build
 
 .PHONY: examples/target/rde-live.iso
 
