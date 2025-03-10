@@ -1,10 +1,13 @@
 (define-module (andrewzhurov configs)
   #:use-module (rde features)
   #:use-module (gnu services)
+  #:use-module (gnu home services)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 match)
+  #:use-module (nongnu packages nvidia)
   #:use-module (andrewzhurov users user1)
-  #:use-module (andrewzhurov hosts t450))
+  #:use-module (andrewzhurov hosts t450)
+  #:use-module (andrewzhurov hosts haus))
 
 ;; (define* (use-nested-configuration-modules
 ;;           #:key
@@ -57,6 +60,43 @@
 (define-public t450-he
   (rde-config-home-environment t450-config))
 
+
+;; as in https://wiki.systemcrafters.net/guix/nvidia/#os-configuration
+(define nvidia-udev-extra-service
+  (simple-service
+   'custom-udev-rules udev-service-type
+   (list nvidia-driver)))
+
+(define nvidia-modules-loader-extra-service
+  (service kernel-module-loader-service-type
+           '("ipmi_devintf"
+             "nvidia"
+             "nvidia_modeset"
+             "nvidia_uvm")))
+
+(define (haus-additional-services)
+  (feature-custom-services
+   #:feature-name-prefix 'haus
+   #:home-services
+   (list
+    nvidia-udev-extra-service
+    nvidia-modules-loader-extra-service)))
+
+
+(define-public haus-config
+  (rde-config
+   (features
+    (append
+     %t450-features
+     %user1-features))))
+
+(define-public haus-os
+  (rde-config-operating-system t450-config))
+
+(define-public haus-he
+  (rde-config-home-environment t450-config))
+
+
 
 ;;; Dispatcher, which helps to return various values based on environment
 ;;; variable value.
@@ -66,6 +106,8 @@
     (match rde-target
       ("t450-home" t450-he)
       ("t450-system" t450-os)
+      ("haus-home" haus-he)
+      ("haus-system" haus-os)
       ("live-system" live-os)
       (_ t450-he))))
 
