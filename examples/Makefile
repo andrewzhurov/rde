@@ -66,6 +66,10 @@ haus/system/reconfigure: auth-nonguix guix
 cow-store:
 	sudo herd start cow-store ${ROOT_MOUNT_POINT}
 
+haus/system/init: guix
+	RDE_TARGET=haus-system ${GUIX} system \
+	init ${CONFIGS} ${ROOT_MOUNT_POINT}
+
 t450/system/init: guix
 	RDE_TARGET=t450-system ${GUIX} system \
 	init ${CONFIGS} ${ROOT_MOUNT_POINT}
