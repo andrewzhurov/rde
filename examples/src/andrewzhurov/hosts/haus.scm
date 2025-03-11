@@ -21,11 +21,11 @@
 ;;   (options->transformation
 ;;    '((with-graft . "mesa=nvda"))))
 
-(define haus-mapped-devices
-  (list (mapped-device
-         (source (uuid "0e51ee1e-49ef-45c6-b0c3-6307e9980fa9"))
-         (target "my-partition")
-         (type luks-device-mapping))))
+;; (define haus-mapped-devices
+;;   (list (mapped-device
+;;          (source (uuid "0e51ee1e-49ef-45c6-b0c3-6307e9980fa9"))
+;;          (target "my-partition")
+;;          (type luks-device-mapping))))
 
 (define haus-file-systems
   (list (file-system
@@ -35,9 +35,11 @@
           (type "vfat"))
         (file-system
           (mount-point "/")
-          (device "/dev/mapper/my-partition")
+          ;; (device "/dev/mapper/my-partition")
+          (device "/dev/sda2")
           (type "ext4")
-          (dependencies haus-mapped-devices))))
+          ;; (dependencies haus-mapped-devices)
+          )))
 
 (define nonguix-pub (local-file "../files/keys/nonguix-key.pub"))
 
@@ -50,10 +52,10 @@
 
    ;;; Allows to declare specific bootloader configuration,
    ;;; grub-efi-bootloader used by default
-   ;; (feature-bootloader)
+   (feature-bootloader)
 
    (feature-file-systems
-    #:mapped-devices haus-mapped-devices
+    ;; #:mapped-devices haus-mapped-devices
     #:file-systems haus-file-systems)
 
    (feature-kanshi)
