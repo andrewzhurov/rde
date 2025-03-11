@@ -24,7 +24,7 @@
 (define haus-mapped-devices
   (list (mapped-device
          (source (uuid "0e51ee1e-49ef-45c6-b0c3-6307e9980fa9"))
-         (target "system-root")
+         (target "my-partition")
          (type luks-device-mapping))))
 
 (define haus-file-systems
@@ -35,7 +35,7 @@
           (type "vfat"))
         (file-system
           (mount-point "/")
-          (device "/dev/mapper/system-root")
+          (device "/dev/mapper/my-partition")
           (type "ext4")
           (dependencies haus-mapped-devices))))
 
