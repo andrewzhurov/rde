@@ -17,29 +17,27 @@
 
   #:use-module (ice-9 match))
 
-(define transform
-  (options->transformation
-   '((with-graft . "mesa=nvda"))))
+;; (define transform
+;;   (options->transformation
+;;    '((with-graft . "mesa=nvda"))))
 
-(define haus-original-mapped-devices
+(define haus-mapped-devices
   (list (mapped-device
          (source (uuid "0e51ee1e-49ef-45c6-b0c3-6307e9980fa9"))
-         (target "enc")
+         (target "system-root")
          (type luks-device-mapping))))
 
 (define haus-file-systems
-  (cons* (file-system
-           (mount-point "/boot/efi")
-           (device (uuid "8F1E-C5A1" 'fat32))
-           (type "vfat"))
-         (file-system
-           (mount-point "/")
-           (device
-            (uuid "cbbacbe6-2d31-411b-b94f-c8663738161c"
-                  'ext4))
-           (type "ext4"))
-         ;; %base-file-systems
-	 (list)))
+  (list (file-system
+          (mount-point "/boot/efi")
+          ;; (device (uuid "8F1E-C5A1" 'fat32))
+          (device "/dev/sda1")
+          (type "vfat"))
+        (file-system
+          (mount-point "/")
+          (device "/dev/mapper/system-root")
+          (type "ext4")
+          (dependencies haus-mapped-devices))))
 
 (define nonguix-pub (local-file "../files/keys/nonguix-key.pub"))
 
@@ -55,6 +53,7 @@
    ;; (feature-bootloader)
 
    (feature-file-systems
+    #:mappend-devices haus-mapped-devices
     #:file-systems haus-file-systems)
 
    (feature-kanshi)
@@ -64,7 +63,7 @@
    (feature-kernel
     #:kernel linux
     #:kernel-arguments '("snd_hda_intel.dmic_detect=0" "modprobe.blacklist=nouveau")
-    #:kernel-loadable-modules (list nvidia-driver)
+    #:kernel-loadable-modules (list nvidia-module) ;; https://gitlab.com/nonguix/nonguix/-/issues/227
     #:firmware (list linux-firmware))
 
    (feature-base-services
