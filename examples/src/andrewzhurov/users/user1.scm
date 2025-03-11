@@ -421,6 +421,15 @@
      ;; #:remote-password-store-url "ssh://abcdw@olorin.lan/~/state/password-store"
      )
 
+    (feature-swaylock
+     ;; swaylock-effects often crashes with red screen
+     ;; #:swaylock (@ (gnu packages wm) swaylock-effects)
+     ;; The blur on lock screen is not privacy-friendly.
+     ;; #:extra-config '((screenshots)
+     ;;                  (effect-blur . 7x5)
+     ;;                  (clock))
+     )
+
     ;; (feature-mail-settings
     ;;  #:mail-directory-fn (const "/home/user1/mail")
     ;;  #:mail-accounts (list
