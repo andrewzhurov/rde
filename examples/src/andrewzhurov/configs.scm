@@ -1,5 +1,6 @@
 (define-module (andrewzhurov configs)
   #:use-module (rde features)
+  #:use-module (rde features base)
   #:use-module (gnu services)
   #:use-module (gnu services base)
   #:use-module (gnu services linux)
