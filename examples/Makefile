@@ -8,7 +8,7 @@ GUIX=GUILE_LOAD_PATH="../src:../tests:./src:../../../guix/guix" GUILE_LOAD_COMPI
 
 SRC_DIR=./src
 CONFIGS=${SRC_DIR}/andrewzhurov/configs.scm
-PULL_EXTRA_OPTIONS=--allow-downgrades --url="https://codeberg.org/guix/guix-mirror.git" --disable-authentication
+PULL_EXTRA_OPTIONS=--allow-downgrades --url="https://codeberg.org/guix/guix-mirror.git" --disable-authentication --substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.trop.in'
 
 ROOT_MOUNT_POINT=/mnt
 
