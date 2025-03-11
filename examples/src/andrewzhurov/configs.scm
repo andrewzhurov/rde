@@ -2,6 +2,7 @@
   #:use-module (rde features)
   #:use-module (gnu services)
   #:use-module (gnu services base)
+  #:use-module (gnu services linux)
   #:use-module (gnu home services)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 match)
