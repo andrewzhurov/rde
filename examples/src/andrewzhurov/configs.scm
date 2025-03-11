@@ -1,6 +1,7 @@
 (define-module (andrewzhurov configs)
   #:use-module (rde features)
   #:use-module (gnu services)
+  #:use-module (gnu services base)
   #:use-module (gnu home services)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 match)
@@ -65,7 +66,7 @@
 (define nvidia-udev-extra-service
   (simple-service
    'custom-udev-rules udev-service-type
-   (list nvidia-driver)))
+   (list nvidia-module))) ;; may be needed instead of nvidia-driver, https://gitlab.com/nonguix/nonguix/-/issues/227
 
 (define nvidia-modules-loader-extra-service
   (service kernel-module-loader-service-type
@@ -87,14 +88,15 @@
   (rde-config
    (features
     (append
-     %t450-features
+     %haus-features
+     (list (haus-additional-services))
      %user1-features))))
 
 (define-public haus-os
-  (rde-config-operating-system t450-config))
+  (rde-config-operating-system haus-config))
 
 (define-public haus-he
-  (rde-config-home-environment t450-config))
+  (rde-config-home-environment haus-config))
 
 
 

@@ -8,7 +8,7 @@ GUIX=GUILE_LOAD_PATH="../src:../env:../tests:./src:./rde" GUILE_LOAD_COMPILED_PA
 
 SRC_DIR=./src
 CONFIGS=${SRC_DIR}/andrewzhurov/configs.scm
-PULL_EXTRA_OPTIONS=--allow-downgrades
+PULL_EXTRA_OPTIONS=--allow-downgrades --url="https://codeberg.org/guix/guix-mirror.git"
 
 ROOT_MOUNT_POINT=/mnt
 
@@ -68,11 +68,11 @@ cow-store:
 
 haus/system/init: guix
 	RDE_TARGET=haus-system ${GUIX} system \
-	init ${CONFIGS} ${ROOT_MOUNT_POINT}
+	init ${CONFIGS} ${ROOT_MOUNT_POINT} --allow-downgrades --substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.trop.in' # https://ci.guix.gnu.org
 
 t450/system/init: guix
 	RDE_TARGET=t450-system ${GUIX} system \
-	init ${CONFIGS} ${ROOT_MOUNT_POINT}
+	init ${CONFIGS} ${ROOT_MOUNT_POINT} --allow-downgrades --substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.trop.in' # https://ci.guix.gnu.org
 
 target:
 	mkdir -p target
