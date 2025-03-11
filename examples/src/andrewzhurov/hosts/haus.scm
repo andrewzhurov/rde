@@ -53,7 +53,7 @@
    ;; (feature-bootloader)
 
    (feature-file-systems
-    #:mappend-devices haus-mapped-devices
+    #:mapped-devices haus-mapped-devices
     #:file-systems haus-file-systems)
 
    (feature-kanshi)
