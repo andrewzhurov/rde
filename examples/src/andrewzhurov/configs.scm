@@ -122,6 +122,7 @@
       ("t450-system" t450-os)
       ("haus-home" haus-he)
       ("haus-system" haus-os)
+      ("keeper-home" keeper-he)
       ("live-system" live-os)
       (_ t450-he))))
 
