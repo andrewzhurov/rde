@@ -329,7 +329,7 @@
                                "--extension-mime-request-handling=always-prompt-for-install"
                                ;; May prevent freezing of PDF viewer, https://issues.chromium.org/issues/41496556
                                "--disable-renderer-accessibility"))
-    (feature-transmission #:auto-start? #f)
+    ;; (feature-transmission #:auto-start? #f)
     (feature-git)
     (feature-additional-services)
     (feature-user-info
