@@ -36,6 +36,8 @@
   #:use-module (rde features terminals)
   #:use-module (rde features rust)
   #:use-module (rde features arei)
+  #:use-module (rde features web-browsers)
+  #:use-module (rde features bittorrent)
   #:use-module (rde features)
   #:use-module (rde home services emacs)
   #:use-module (rde home services i2p)
