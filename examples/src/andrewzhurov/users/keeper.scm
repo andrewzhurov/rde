@@ -346,10 +346,10 @@
     ;;  )
 
     ;; (feature-security-token)
-    (feature-password-store
-     #:password-store-directory "/home/keeper/password-store"
-     ;; #:remote-password-store-url "ssh://abcdw@olorin.lan/~/state/password-store"
-     )
+    ;; (feature-password-store
+    ;;  #:password-store-directory "/home/keeper/password-store"
+    ;;  ;; #:remote-password-store-url "ssh://abcdw@olorin.lan/~/state/password-store"
+    ;;  )
 
     (feature-xdg
      #:xdg-user-directories-configuration
