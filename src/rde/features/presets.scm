@@ -133,6 +133,7 @@
     #:mini-frame? #f
     #:marginalia-align 'right)
    (feature-emacs-corfu
+    #:turn-on? #f
     #:corfu-doc-auto #f)
    (feature-emacs-vertico)
 
