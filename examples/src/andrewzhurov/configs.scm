@@ -9,6 +9,7 @@
   #:use-module (ice-9 match)
   #:use-module (nongnu packages nvidia)
   #:use-module (andrewzhurov users user1)
+  #:use-module (andrewzhurov users keeper)
   #:use-module (andrewzhurov hosts t450)
   #:use-module (andrewzhurov hosts haus))
 
@@ -99,6 +100,15 @@
 
 (define-public haus-he
   (rde-config-home-environment haus-config))
+
+
+(define-public keeper-config
+  (rde-config
+   (features
+    %keeper-features)))
+
+(define-public keeper-he
+  (rde-config-home-environment keeper-config))
 
 
 
