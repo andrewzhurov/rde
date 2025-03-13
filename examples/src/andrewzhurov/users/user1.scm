@@ -186,7 +186,7 @@
     (strings->packages
      "figlet" ;; TODO: Move to emacs-artist-mode
      "calibre"
-     "icecat" ;; "nyxt"
+     ;; "icecat" ;; "nyxt"
 
      "hut"
      "utox" "qtox"
