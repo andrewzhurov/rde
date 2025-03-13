@@ -32,16 +32,15 @@
          (type luks-device-mapping))))
 
 (define haus-file-systems
-  (cons* (file-system
-           (mount-point "/boot/efi")
-           (device (uuid "EE27-28F8" 'fat32))
-           (type "vfat"))
-         (file-system
-           (mount-point "/")
-           (device "/dev/mapper/my-root")
-           (type "ext4")
-           (dependencies haus-mapped-devices))
-         %base-file-systems))
+  (list (file-system
+          (mount-point "/boot/efi")
+          (device (uuid "EE27-28F8" 'fat32))
+          (type "vfat"))
+        (file-system
+          (mount-point "/")
+          (device "/dev/mapper/my-root")
+          (type "ext4")
+          (dependencies haus-mapped-devices))))
 
 (define nonguix-pub (local-file "../files/keys/nonguix-key.pub"))
 
