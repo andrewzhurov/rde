@@ -81,7 +81,7 @@
 (define (haus-additional-services)
   (feature-custom-services
    #:feature-name-prefix 'haus
-   #:home-services
+   #:system-services
    (list
     nvidia-udev-extra-service
     nvidia-modules-loader-extra-service)))
