@@ -6,6 +6,7 @@
   #:use-module (rde packages bb)
 
   #:use-module (gnu system file-systems)
+  #:use-module (gnu system keyboard)
   #:use-module (gnu system mapped-devices)
   #:use-module (gnu packages linux)
 
