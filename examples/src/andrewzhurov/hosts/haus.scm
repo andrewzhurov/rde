@@ -10,6 +10,9 @@
   #:use-module (gnu system mapped-devices)
   #:use-module (gnu packages linux)
 
+  #:use-module (gnu bootloader)
+  #:use-module (gnu bootloader grub)
+
   #:use-module (guix gexp)
 
   #:use-module (nongnu packages linux)
