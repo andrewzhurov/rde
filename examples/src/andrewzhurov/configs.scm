@@ -1,6 +1,7 @@
 (define-module (andrewzhurov configs)
   #:use-module (rde features)
   #:use-module (rde features base)
+  #:use-module (rde features wm)
   #:use-module (gnu services)
   #:use-module (gnu services base)
   #:use-module (gnu services linux)
@@ -76,7 +77,9 @@
            '("ipmi_devintf"
              "nvidia"
              "nvidia_modeset"
-             "nvidia_uvm")))
+             "nvidia_uvm"
+
+             "nvidia-drm.modeset")))
 
 (define (haus-additional-services)
   (feature-custom-services
@@ -92,8 +95,11 @@
    (features
     (append
      %haus-features
-     (list (haus-additional-services))
-     %user1-features))))
+     (remove (lambda (f) (member (feature-name f) '(sway-run-on-tty)))
+             %user1-features)
+     (list (haus-additional-services)
+           (feature-sway-run-on-tty
+            #:launch-arguments "--unsupported-gpu"))))))
 
 (define-public haus-os
   (rde-config-operating-system haus-config))
