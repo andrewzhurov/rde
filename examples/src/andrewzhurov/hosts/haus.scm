@@ -71,9 +71,11 @@
 
    (feature-kernel
     #:kernel linux
-    #:kernel-arguments '("snd_hda_intel.dmic_detect=0" "modprobe.blacklist=nouveau" "rd.driver.blacklist=nouveau" "nvidia_drm.modeset=1" ;; "nvidia_drm.fbdev=1"
+    #:kernel-arguments '("snd_hda_intel.dmic_detect=0"
+                         ;; "modprobe.blacklist=nouveau" "rd.driver.blacklist=nouveau" "nvidia_drm.modeset=1" ;; "nvidia_drm.fbdev=1"
+                         ;; "NVreg_EnableGpuFirmware=1"
                          )
-    #:kernel-loadable-modules (list nvidia-module) ;; https://gitlab.com/nonguix/nonguix/-/issues/227
+    ;; #:kernel-loadable-modules (list nvidia-module) ;; https://gitlab.com/nonguix/nonguix/-/issues/227
     #:firmware (list linux-firmware))
 
    (feature-base-services
