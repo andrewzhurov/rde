@@ -75,7 +75,8 @@
    (feature-sway)
    (feature-emacs-power-menu)
    (feature-sway-run-on-tty
-    #:sway-tty-number 2)
+    #:sway-tty-number 2
+    #:launch-arguments "--unsupported-gpu")
    (feature-sway-screenshot)
    ;; (feature-sway-statusbar
    ;;  #:use-global-fonts? #f)

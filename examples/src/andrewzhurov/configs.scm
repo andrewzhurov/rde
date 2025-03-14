@@ -95,11 +95,13 @@
    (features
     (append
      %haus-features
-     (remove (lambda (f) (member (feature-name f) '(sway-run-on-tty)))
-             %user1-features)
+     %user1-features
+     ;; (remove (lambda (f) (member (feature-name f) '(sway-run-on-tty)))
+     ;;         %user1-features)
      (list (haus-additional-services)
-           (feature-sway-run-on-tty
-            #:launch-arguments "--unsupported-gpu"))))))
+           ;; (feature-sway-run-on-tty
+           ;;  #:launch-arguments "--unsupported-gpu")
+           )))))
 
 (define-public haus-os
   (rde-config-operating-system haus-config))
