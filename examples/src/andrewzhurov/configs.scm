@@ -77,9 +77,7 @@
            '("ipmi_devintf"
              "nvidia"
              "nvidia_modeset"
-             "nvidia_uvm"
-
-             "nvidia-drm.modeset")))
+             "nvidia_uvm")))
 
 (define (haus-additional-services)
   (feature-custom-services
