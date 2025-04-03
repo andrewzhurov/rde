@@ -76,7 +76,8 @@
    (feature-emacs-power-menu)
    (feature-sway-run-on-tty
     #:sway-tty-number 2
-    #:launch-arguments "--unsupported-gpu")
+    ;; #:launch-arguments "--unsupported-gpu"
+    )
    (feature-sway-screenshot)
    ;; (feature-sway-statusbar
    ;;  #:use-global-fonts? #f)
@@ -134,7 +135,6 @@
     #:mini-frame? #f
     #:marginalia-align 'right)
    (feature-emacs-corfu
-    #:turn-on? #f
     #:corfu-doc-auto #f)
    (feature-emacs-vertico)
 
