@@ -186,7 +186,7 @@
     (strings->packages
      "figlet" ;; TODO: Move to emacs-artist-mode
      "calibre"
-     ;; "icecat" ;; "nyxt"
+     "icecat" ;; "nyxt"
 
      "hut"
      "utox" "qtox"
@@ -195,7 +195,7 @@
      "alsa-utils" ;; "cozy" ;; commented on 2025-02-07
      "pavucontrol" "wev"
      "imagemagick"
-     "obs" "obs-wlrobs"
+     "obs" "obs-wlrobs" "obs-source-record"
      "recutils" "binutils" "make" "gdb"
 
      "hicolor-icon-theme" "adwaita-icon-theme" "gnome-themes-extra"
