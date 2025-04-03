@@ -38,6 +38,7 @@
   #:use-module (rde features arei)
   #:use-module (rde features web-browsers)
   #:use-module (rde features bittorrent)
+  #:use-module (rde features fontutils)
   #:use-module (rde features)
   #:use-module (rde home services emacs)
   #:use-module (rde home services i2p)
@@ -318,8 +319,8 @@
                 git)))
            %all-features)
    (list
+    (feature-fonts)
     (feature-mpv)
-    ;; (feature-librewolf)
     (feature-ungoogled-chromium
      #:default-browser? #t
      #:default-startup-flags '( ;; taken from default value, may get outdated
