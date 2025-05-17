@@ -323,15 +323,15 @@
     (feature-foreign-distro)
     (feature-fonts)
     (feature-mpv)
-    (feature-ungoogled-chromium
-     #:default-browser? #t
-     #:default-startup-flags '( ;; taken from default value, may get outdated
-                               "--user-data-dir=$XDG_DATA_HOME/chromium"
-                               ;; required by chromium-web-store
-                               ;; https://github.com/NeverDecaf/chromium-web-store?tab=readme-ov-file#installation
-                               "--extension-mime-request-handling=always-prompt-for-install"
-                               ;; May prevent freezing of PDF viewer, https://issues.chromium.org/issues/41496556
-                               "--disable-renderer-accessibility"))
+    ;; (feature-ungoogled-chromium
+    ;;  #:default-browser? #t
+    ;;  #:default-startup-flags '( ;; taken from default value, may get outdated
+    ;;                            "--user-data-dir=$XDG_DATA_HOME/chromium"
+    ;;                            ;; required by chromium-web-store
+    ;;                            ;; https://github.com/NeverDecaf/chromium-web-store?tab=readme-ov-file#installation
+    ;;                            "--extension-mime-request-handling=always-prompt-for-install"
+    ;;                            ;; May prevent freezing of PDF viewer, https://issues.chromium.org/issues/41496556
+    ;;                            "--disable-renderer-accessibility"))
     ;; (feature-transmission #:auto-start? #f)
     (feature-git #:sign-commits? #f)
     (feature-additional-services)
@@ -366,7 +366,7 @@
       (publicshare "$HOME")
       (templates "$HOME")))
 
-    (feature-foot)
+    ;; (feature-foot)
 
     (feature-emacs-keycast #:turn-on? #f)
     (feature-emacs-time)
@@ -406,7 +406,7 @@
     (feature-clojure)
     (feature-javascript)
     (feature-emacs-flymake)
-    (feature-rust)
+    (feature-rust-foreign)
     ;; (feature-emacs-guix
     ;;  #:guix-directory "~/gits/guix")
 
