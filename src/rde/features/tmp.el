@@ -243,3 +243,6 @@ recreate the minimap to avoid problems with recentering."
 
 (with-eval-after-load 'tooltip-mode
   (setq tooltip-hide-delay 1000))
+
+
+(setq default-frame-alist '((undecorated . t))) ;; hide title bar on Ubuntu
