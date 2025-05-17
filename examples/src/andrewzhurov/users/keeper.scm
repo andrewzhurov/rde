@@ -320,6 +320,7 @@
                 git)))
            %all-features)
    (list
+    (feature-foreign-distro)
     (feature-fonts)
     (feature-mpv)
     (feature-ungoogled-chromium
