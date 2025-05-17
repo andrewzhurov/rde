@@ -87,7 +87,8 @@
    home-emacs-service-type
    (home-emacs-extension
     (init-el
-     `((with-eval-after-load 'piem
+     `((setq warning-minimum-level :emergency)
+       (with-eval-after-load 'piem
          (setq piem-inboxes
                '(("guix-devel"
                   :url "https://yhetil.org/guile-devel/"
