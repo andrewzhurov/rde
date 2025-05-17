@@ -44,7 +44,6 @@
   #:use-module (rde features web-browsers)
   #:use-module (rde features wm)
   #:use-module (rde features xdg)
-  #:use-module (gnu packages emacs)
   #:use-module (guix gexp))
 
 ;;;
@@ -124,8 +123,6 @@
 (define-public rde-emacs
   (list
    (feature-emacs
-    #:emacs emacs
-    ;; #:emacs-server-mode? #f
     #:default-application-launcher? #f
     #:extra-init-el `((load ,(local-file "./tmp.el"))))
 
