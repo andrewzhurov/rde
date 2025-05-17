@@ -34,6 +34,9 @@ repl: ares-rs
 examples/t450/home/reconfigure:
 	make -C examples t450/home/reconfigure
 
+examples/keeper/home/reconfigure:
+	make -C examples keeper/home/reconfigure
+
 examples/ixy/home/build:
 	make -C examples t450/home/build
 
