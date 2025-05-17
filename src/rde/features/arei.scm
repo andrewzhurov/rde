@@ -5,6 +5,7 @@
 
   #:use-module (rde packages)
   #:use-module (rde packages emacs-xyz)
+  #:use-module (rde packages guile-xyz)
 
   #:use-module (gnu services)
   #:use-module (gnu home services)
@@ -29,7 +30,7 @@
      (simple-service
       'emacs-arei-add-packages
       home-profile-service-type
-      (list guile-next guile-ares-rs))
+      (list guile-next guile-ares-rs-latest))
 
      ;; https://github.com/DogLooksGood/meomacs/blob/master/programming.org#fix-rust-syntax-highlighting
      (rde-elisp-configuration-service
