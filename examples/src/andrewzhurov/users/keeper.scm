@@ -189,7 +189,6 @@
      )
     (strings->packages
      "calibre"
-     "icecat"
 
      "imagemagick"
      "obs" "obs-wlrobs"
@@ -249,7 +248,8 @@
      "audacity"
 
      "nix"
-     "emacs-arei" "guile-next" "guile-ares-rs"
+
+     "git-lfs"
      ))))
 
 
@@ -271,7 +271,7 @@
    #:home-services
    (list
     emacs-extra-packages-service
-    ;; home-extra-packages-service
+    home-extra-packages-service
     mpv-add-user-settings-service)))
 
 ;;; User-specific features with personal preferences
