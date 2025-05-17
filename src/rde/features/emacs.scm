@@ -607,6 +607,8 @@ It can contain settings not yet moved to separate features."
                         #~(system* "emacs" "-q"))
      (emacs-xdg-service 'emacs-Q "Emacs (No init, no site-lisp: -Q)"
                         #~(system* "emacs" "-Q"))
+     (emacs-xdg-service 'emacs "Emacs"
+                        #~(system* "emacs"))
      (emacs-xdg-service 'emacs-org-protocol "Emacs (Client) [Org-protocol]"
                         emacs-client
                         #:default-for '(x-scheme-handler/org-protocol))
