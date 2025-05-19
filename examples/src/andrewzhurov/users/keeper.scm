@@ -404,7 +404,7 @@
 
     ;; (feature-emacs-arei)
     (feature-clojure)
-    (feature-javascript)
+    ;; (feature-javascript)
     (feature-emacs-flymake)
     (feature-rust-foreign)
     ;; (feature-emacs-guix
