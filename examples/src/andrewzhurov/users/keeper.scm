@@ -188,20 +188,21 @@
      ;; iwlwifi-firmware ;; mayb for wifi
      )
     (strings->packages
-     "calibre"
+     ;; "calibre"
 
-     "imagemagick"
-     "obs" "obs-wlrobs"
-     "binutils" "make"
+     ;; "imagemagick"
+     ;; "obs" "obs-wlrobs"
+     ;; "binutils" "make"
 
      "hicolor-icon-theme" "adwaita-icon-theme" "gnome-themes-extra"
      "papirus-icon-theme" ; 85k files
      "arc-theme"
-     "thunar" "fd"
+     ;; "thunar" "fd"
 
-     "libreoffice"
+     ;; "libreoffice"
      ;; "ffmpeg"
-     "ripgrep" "curl"
+     "ripgrep"
+     ;; "curl"
 
      ;; Andrew Zhurov's stuff below
      ;; clojure-related stuff
@@ -245,7 +246,7 @@
      ;; "pitivi" ;; build error
      ;; "gstreamer" ;; some error
      ;; "blender" ;; display error
-     "audacity"
+     ;; "audacity"
 
      "nix"
 
