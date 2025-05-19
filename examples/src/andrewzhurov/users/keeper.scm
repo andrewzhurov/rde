@@ -248,7 +248,7 @@
      ;; "blender" ;; display error
      ;; "audacity"
 
-     "nix"
+     ;; "nix"
 
      "git-lfs"
      ))))
