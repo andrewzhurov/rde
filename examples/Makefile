@@ -65,7 +65,7 @@ haus/system/reconfigure: auth-nonguix guix
 
 keeper/home/reconfigure: guix
 	RDE_TARGET=keeper-home ${GUIX} home \
-	reconfigure ${CONFIGS} --allow-downgrades --substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.trop.in' #    https://ci.guix.gnu.org
+	reconfigure ${CONFIGS} --allow-downgrades --substitute-urls='https://bordeaux.guix.gnu.org' #    https://ci.guix.gnu.org
 
 cow-store:
 	sudo herd start cow-store ${ROOT_MOUNT_POINT}

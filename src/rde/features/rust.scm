@@ -122,7 +122,8 @@
 
             (setq rust-rustfmt-bin    ,#~#$rust-rustfmt:tools
                   rust-cargo-bin      ,#~#$rust-cargo:cargo
-                  rust-format-on-save t)
+                  rust-format-on-save t
+                  rust-rustfmt-switches '("--edition" "2024"))
 
             (add-hook 'eglot-managed-mode-hook 'rde--set-consult-imenu-cache-to-nil)
             (add-hook 'rust-mode-hook       'eglot-ensure) ;; source: https://rust-analyzer.github.io/manual.html#eglot
@@ -245,6 +246,7 @@
           (eglot-x-setup))
         (require 'flymake-clippy)
         (require 'smartparens)
+        (require 'smartparens-config)
 
         (with-eval-after-load 'consult-imenu
           (add-to-list
@@ -304,7 +306,8 @@
 
           (setq rust-rustfmt-bin    "~/.cargo/bin/rustfmt"
                 rust-cargo-bin      "~/.cargo/bin/cargo"
-                rust-format-on-save t)
+                rust-format-on-save t
+                rust-rustfmt-switches '("--edition" "2024"))
 
           (add-hook 'eglot-managed-mode-hook 'rde--set-consult-imenu-cache-to-nil)
           (add-hook 'rust-mode-hook       'eglot-ensure) ;; source: https://rust-analyzer.github.io/manual.html#eglot

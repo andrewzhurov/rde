@@ -530,6 +530,27 @@ Org-Roam-UI is meant a successor of org-roam-server that extends functionality o
     (description "Taking interactive notes when watching videos or listening to audios in org-mode.")
     (license license:gpl3+))) ;; GPL 3.0
 
+(define-public emacs-jdecomp
+  (let* ((commit "692866abc83deedce62be8d6040cf24dda7fb7a8"))
+    (package
+      (name "emacs-jdecomp")
+      (version "0.2.1")
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/xiongtx/jdecomp")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "00l6mc643na97jrb0k595kwmfg8wc7m5iqjd9l9vvf3dal6389b8"))))
+      (build-system emacs-build-system)
+      (home-page "https://github.com/xiongtx/jdecomp")
+      (synopsis "Emacs interface to Java decompilers")
+      (description "")
+      (license license:gpl3+)))) ;; no license, actually
+
 (use-modules (rde api store))
 (build-with-store emacs-org-media-note)
 
@@ -577,3 +598,5 @@ Org-Roam-UI is meant a successor of org-roam-server that extends functionality o
   (list '(1 . 2))
   (package-name emacs-org-media-note)
   (object->string emacs-org-media-note))
+
+emacs-jdecomp

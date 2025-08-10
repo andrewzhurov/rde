@@ -139,6 +139,7 @@
        ;; (@ (rde packages emacs-xyz) emacs-jsonrpc-1.0.25)
        ;; (@ (rde packages emacs-xyz) emacs-eglot-1.17)
        ;; (@ (rde packages emacs-xyz) emacs-combobulate)
+       (@ (rde packages emacs-xyz) emacs-jdecomp)
        )
       (strings->packages
        ;; "emacs-dirvish"
@@ -170,6 +171,7 @@
        "emacs-typescript-mode"
        ;; "emacs-tide"
        "emacs-crux"
+       "emacs-glsl-mode"
        ))))))
 
 
@@ -418,6 +420,7 @@
     (feature-org-copy-inline-image)
     (feature-emacs-org-media-note)
     ;; (feature-emacs-org-roam-ui)
+    ;; (feature-jdecomp)
 
     (feature-keyboard
      ;; To get all available options, layouts and variants run:
