@@ -551,8 +551,6 @@ Org-Roam-UI is meant a successor of org-roam-server that extends functionality o
       (description "")
       (license license:gpl3+)))) ;; no license, actually
 
-(use-modules (rde api store))
-(build-with-store emacs-org-media-note)
 
 
 (use-modules (ice-9 pretty-print)
