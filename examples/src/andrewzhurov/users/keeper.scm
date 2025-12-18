@@ -421,6 +421,7 @@
     (feature-emacs-org-media-note)
     ;; (feature-emacs-org-roam-ui)
     ;; (feature-jdecomp)
+   (feature-priority-bin)
 
     (feature-keyboard
      ;; To get all available options, layouts and variants run:

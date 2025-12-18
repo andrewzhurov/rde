@@ -19,7 +19,9 @@
 
   #:use-module (guix gexp)
 
-  #:export (feature-rust feature-rust-foreign))
+  #:export (feature-rust
+            feature-rust-foreign
+            feature-priority-bin))
 
 ;; https://github.com/jpe90/emacs-clj-deps-new
 
@@ -397,4 +399,19 @@
   (feature
    (name 'rust-foreign)
    (values `((rust-foreign . #t)))
+   (home-services-getter get-home-services)))
+
+(define* (feature-priority-bin)
+  "Add ~/.priority-bin/ folder to $PATH as escape hatch to override aliases"
+
+  (define (get-home-services config)
+    (list
+     (simple-service
+      'priority-bin
+      home-environment-variables-service-type
+      `(("PATH" . "${HOME}/.priority-bin/:${PATH}")))))
+
+  (feature
+   (name 'priority-bin)
+   (values `((priority-bin . #t)))
    (home-services-getter get-home-services)))
