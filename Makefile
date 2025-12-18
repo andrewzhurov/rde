@@ -10,7 +10,7 @@ QEMU_BASE_ARGS= \
 -vga none -device virtio-gpu-pci
 # -vga qxl
 
-default: examples/t450/home/reconfigure
+default: examples/keeper/home/reconfigure
 
 all: ares
 	@echo default target
