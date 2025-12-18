@@ -246,3 +246,55 @@ recreate the minimap to avoid problems with recentering."
 
 
 (setq default-frame-alist '((undecorated . t))) ;; hide title bar on Ubuntu
+
+
+
+;; Adopt eglot server when xreffing into a dependency project
+(defun eglot--xref-make-match (name uri range)
+  "Like `xref-make-match' but with LSP's NAME, URI and RANGE.
+Try to visit the target file for a richer summary line."
+  (pcase-let*
+      ((file (eglot--uri-to-path uri))
+       (visiting (or (find-buffer-visiting file)
+                     (gethash uri eglot--temp-location-buffers)))
+       (collect (lambda ()
+                  (eglot--widening
+                   (pcase-let* ((`(,beg . ,end) (eglot--range-region range))
+                                (bol (progn (goto-char beg) (eglot--bol)))
+                                (substring (buffer-substring bol (line-end-position)))
+                                (hi-beg (- beg bol))
+                                (hi-end (- (min (line-end-position) end) bol)))
+                     (add-face-text-property hi-beg hi-end 'xref-match
+                                             t substring)
+                     (list substring (line-number-at-pos (point) t)
+                           (eglot-utf-32-linepos) (- end beg))))))
+       (`(,summary ,line ,column ,length)
+        (cond
+         (visiting (with-current-buffer visiting (funcall collect)))
+         ((file-readable-p file) (with-current-buffer
+                                     (puthash uri (generate-new-buffer " *temp*")
+                                              eglot--temp-location-buffers)
+                                   (insert-file-contents file)
+                                   (funcall collect)))
+         (t ;; fall back to the "dumb strategy"
+          (let* ((start (cl-getf range :start))
+                 (line (1+ (cl-getf start :line)))
+                 (start-pos (cl-getf start :character))
+                 (end-pos (cl-getf (cl-getf range :end) :character)))
+            (list name line start-pos (- end-pos start-pos)))))))
+
+    (when-let* ((from-server (eglot--current-server-or-lose))
+                (to-file-name (expand-file-name file)))
+      (or (when-let* ((to-file-dir (file-name-directory to-file-name))
+                      (to-project (project-current nil to-file-dir)))
+            (unless (cl-find major-mode
+                             (gethash to-project eglot--servers-by-project)
+                             :key #'eglot--major-modes
+                             :test #'memq)
+              (print "Adopting eglot server for this project")
+              (push from-server
+                    (gethash to-project eglot--servers-by-project))))
+          ;; if there's no project, create file->server binding
+          (setf (gethash to-file-name eglot--servers-by-xrefed-file)
+                from-server)))
+    (xref-make-match summary (xref-make-file-location file line column) length)))
