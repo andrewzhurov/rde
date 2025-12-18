@@ -501,16 +501,16 @@ Org-Roam-UI is meant a successor of org-roam-server that extends functionality o
 (define-public emacs-org-media-note
   (package
     (name "emacs-org-media-note")
-    (version "2024-06-27")
+    (version "2025-08-21")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
              (url "https://github.com/yuchen-lea/org-media-note")
-             (commit "1f5cc8d1bbbc1b2fc99d27ac753ad64a5c98c8c9")))
+             (commit "fe447cdf3fce0e58accbe65619efe4970767e7eb")))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0mlqajlpnl5cn8ypc7ga4b8yq83fmsz5nvyynx1bfhp64p2f975y"))))
+        (base32 "15gdj8vvxqn644sbddpwm7bjia0w6hbmmcf4mri12jx1fjsbaxn4"))))
     (build-system emacs-build-system)
     (propagated-inputs
      `(("emacs-mpv" ,(@ (gnu packages emacs-xyz) emacs-mpv))

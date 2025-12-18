@@ -140,6 +140,7 @@
             ;; Andrew Zhurov's stuff
             feature-emacs-org-roam-ui
             feature-emacs-rust
+            feature-emacs-org-media-note
             feature-emacs-ccls
             ))
 
@@ -6343,8 +6344,7 @@ WTTR-LOCATIONS you will get a weather report based on your IP address."
      (rde-elisp-configuration-service
       emacs-f-name
       config
-      `((require 'org-media-note-org-ref)
-        (setq org-media-note-screenshot-image-dir "~/notes/org-roam/store/mpv-screenshot/")  ;; Folder to save screenshot
+      `((setq org-media-note-screenshot-image-dir "~/notes/org-roam/store/mpv-screenshot/")  ;; Folder to save screenshot
         )
       #:elisp-packages (list emacs-org-media-note
                              ;; org-ref
@@ -6357,7 +6357,6 @@ WTTR-LOCATIONS you will get a weather report based on your IP address."
    (values `((,f-name . #t)))
    (home-services-getter get-home-services)))
 
-feature-emacs-org-media-note
 
 (define* (feature-emacs-ccls)
   "Configure emacs-ccls for GNU Emacs."
