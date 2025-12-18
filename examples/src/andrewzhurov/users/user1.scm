@@ -566,6 +566,7 @@
     (feature-emacs-org-media-note)
     (feature-sway-screenrecord)
     ;; (feature-emacs-org-roam-ui)
+    ;; (feature-emacs-ccls)
 
     (feature-keyboard
      ;; To get all available options, layouts and variants run:

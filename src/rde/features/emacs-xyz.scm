@@ -37,6 +37,7 @@
 
   #:use-module (rde packages)
   #:use-module (rde packages emacs-xyz)
+  #:use-module (gnu packages cpp)
   #:use-module (gnu packages emacs-xyz)
   #:use-module (rde serializers elisp)
 
@@ -139,7 +140,8 @@
             ;; Andrew Zhurov's stuff
             feature-emacs-org-roam-ui
             feature-emacs-rust
-            feature-emacs-org-media-note))
+            feature-emacs-ccls
+            ))
 
 
 
@@ -6356,3 +6358,50 @@ WTTR-LOCATIONS you will get a weather report based on your IP address."
    (home-services-getter get-home-services)))
 
 feature-emacs-org-media-note
+
+(define* (feature-emacs-ccls)
+  "Configure emacs-ccls for GNU Emacs."
+
+  (define emacs-f-name 'ccls)
+  (define f-name (symbol-append 'emacs- emacs-f-name))
+
+  (define ccls-bin (file-append ccls "/bin/ccls"))
+
+  (define (get-home-services config)
+    (list
+     (simple-service
+      'emacs-ccls-add-packages
+      home-profile-service-type
+      (list ccls))
+
+     (rde-elisp-configuration-service
+      emacs-f-name
+      config
+      `(
+        ;; (require 'emacs-ccls)
+        ;; (with-eval-after-load 'emacs-ccls
+        ;;   (setq ccls-executable ,ccls-bin))
+
+        (require 'eglot)
+        (with-eval-after-load 'eglot
+          (add-to-list 'eglot-server-programs '(c-mode . (,ccls-bin)))
+          (add-hook 'c-mode-hook 'eglot-ensure)
+
+          ;; go-to-definition fix due to Emacs/eglot mismatch(?)
+          ;; otherwise it errors with:
+          ;; eglot--lsp-position-to-point: Symbol’s function definition is void: eglot-move-to-column
+          (unless (fboundp 'eglot-move-to-column)
+            (defun eglot-move-to-column (col)
+              "Compatibility shim: move to column COL and return point."
+              ;; Move point to column COL (like move-to-column) and return point.
+              (move-to-column col)
+              (point)))
+          )
+        )
+      ;; #:elisp-packages (list emacs-ccls)
+      )))
+
+  (feature
+   (name f-name)
+   (values `((,f-name . #t)))
+   (home-services-getter get-home-services)))

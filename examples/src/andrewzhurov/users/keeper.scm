@@ -421,6 +421,7 @@
     (feature-emacs-org-media-note)
     ;; (feature-emacs-org-roam-ui)
     ;; (feature-jdecomp)
+   (feature-emacs-ccls)
    (feature-priority-bin)
 
     (feature-keyboard
