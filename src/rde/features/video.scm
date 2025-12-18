@@ -21,7 +21,7 @@
 (define-module (rde features video)
   #:use-module (rde features)
   #:use-module (rde features emacs)
-  #:use-module (rde features predicates)
+  #:use-module (rde predicates)
   #:use-module (gnu packages emacs-xyz)
   #:use-module (rde features fontutils)
   #:use-module (gnu packages emacs-xyz)
@@ -258,8 +258,7 @@ do with the file, and whether to add the file to the current PLAYLIST."
      (home-services-getter get-home-services)))
 
 (define rde-yt-dlp-config
-  `(("--format" . "247+251") ; 720p webm
-    ("--output" . "%(title)s [%(id)s].%(ext)s")))
+  `(("--output" . "%(title)s [%(id)s].%(ext)s")))
 
 (define* (feature-yt-dlp
           #:key

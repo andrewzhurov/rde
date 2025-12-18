@@ -1,10 +1,9 @@
-# profiles.mk provides guix version specified by rde/channels-lock.scm
-# To rebuild channels-lock.scm use `make -B rde/channels-lock.scm`
-include profiles.mk
+CHANNELS_FILE=./env/guix/rde-configs/env/guix/channels.scm
+CHANNELS_FILE_LOCAL_RDE=./env/guix/rde-configs/env/guix/channels-ci.scm
+GUIXTM=GUILE_LOAD_PATH="../src:../tests:./src" guix time-machine -L ./env/guix -C ${CHANNELS_FILE}
+GUIXTM_LOCAL_RDE=guix time-machine -L ./env/guix -C ${CHANNELS_FILE_LOCAL_RDE}
 
-# Also defined in .envrc to make proper guix version available project-wide
-GUIX_PROFILE=target/profiles/guix
-GUIX=GUILE_LOAD_PATH="../src:../env:../tests:./src:./rde" GUILE_LOAD_COMPILED_PATH="" ${GUIX_PROFILE}/bin/guix
+GUIX=$(GUIXTM) --
 
 SRC_DIR=./src
 CONFIGS=${SRC_DIR}/andrewzhurov/configs.scm
@@ -30,18 +29,28 @@ repl: ares
 	${GUIX} repl \
 	-L ../files/emacs/gider/src --listen=tcp:37146
 
-ares:
-	${GUIX} shell guile-next guile-ares-rs --substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.gnu.org https://ci.guix.trop.in' \
-	-e '(@ (rde packages package-management) guix-from-channels-lock)' \
+ares: env/sync
+	${GUIX} shell -L ./env/guix -L ./env/dev guile guile-ares-rs --substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.gnu.org https://ci.guix.trop.in' \
+	-e '(@ (rde-configs env dev packages) guix-package)' \
+	-e '(@ (rde-configs env dev packages) channels-package)' \
 	-- guile \
-	-L ../src \
-	-L ../env \
-	-L ./rde \
-	-L ./src \
-	-L /data/abcdw/work/abcdw/guile-ares-rs/src/guile \
+	-L ./env/guix \
+	-L ./env/dev \
 	-c \
 "(begin (use-modules (guix gexp)) #;(load gexp reader macro globally) \
-((@ (ares server) run-nrepl-server) #:nrepl-port-path \"../.nrepl-port\"))"
+((@ (ares server) run-nrepl-server)))"
+
+env/guix/rde/env/guix/channels.scm: ../env/guix/rde/env/guix/channels.scm
+	mkdir -p $(@D)
+	cat $< > $@
+	echo -e "\n;;; This is an automatic copy of RDE's channels.scm" >> $@
+	echo -e ";;; Do not edit it manually" >> $@
+
+env/sync: env/guix/rde/env/guix/channels.scm
+guix: env/sync
+
+guix-pull:
+	guix pull -L ./env/guix -C ${CHANNELS_FILE}
 
 ixy/home/build: guix
 	RDE_TARGET=ixy-home ${GUIX} home \
@@ -109,11 +118,12 @@ minimal/home/build: guix
 	${GUIX} home build ./src/rde-configs/minimal.scm
 
 minimal/home/build/ci:
-	guix time-machine -C rde/channels-ci.scm -- \
+	${GUIXTM_LOCAL_RDE} -- \
 	home build ./src/rde-configs/minimal.scm
 
 minimal/home/build/ci-no-auth:
-	guix time-machine -C rde/channels-ci.scm --disable-authentication -- \
+	${GUIXTM_LOCAL_RDE} \
+	--disable-authentication -- \
 	home build ./src/rde-configs/minimal.scm
 
 cloud-rde: guix

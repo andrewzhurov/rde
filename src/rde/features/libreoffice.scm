@@ -19,7 +19,7 @@
 
 (define-module (rde features libreoffice)
   #:use-module (rde features)
-  #:use-module (rde features predicates)
+  #:use-module (rde predicates)
   #:use-module (gnu home services)
   #:use-module (gnu home services xdg)
   #:use-module (gnu packages libreoffice)
@@ -51,7 +51,7 @@
   (package
     (inherit pkg)
     (name "libreoffice")
-    (source (origin (inherit (package-source pkg))))
+    (source #f)
     (build-system trivial-build-system)
     (arguments
      (list

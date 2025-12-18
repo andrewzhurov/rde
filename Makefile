@@ -1,35 +1,53 @@
 # pipefail is not POSIX complaint
 
-GUIXTM=guix time-machine -C ./examples/rde/channels-lock.scm
+GUIXTM=guix time-machine -C ./env/guix/rde/env/guix/channels.scm
 GUIX=$(GUIXTM) --
 EMACS=$(GUIX) shell emacs emacs-ox-html-stable-ids -- emacs
 HUT=$(GUIX) shell hut -- hut
 
+EXAMPLES_SRC_DIR=./examples/src
+CONFIGS=${EXAMPLES_SRC_DIR}/andrewzhurov/configs.scm
+
+DEV_ENV_LOAD_PATH=-L ./env/guix -L ./env/dev -L ./src
+RDE_SRC_LOAD_PATH=-L ./env/guix -L ./env/dev -L ./src
+EXAMPLES_LOAD_PATH=-L ${EXAMPLES_SRC_DIR}
+
+DEV_SRC_LOAD_PATH=${RDE_SRC_LOAD_PATH} \
+${EXAMPLES_LOAD_PATH} \
+-L ./tests \
+-L ./files/emacs/gider/src \
+
 QEMU_BASE_ARGS= \
--m 4096 -smp 1 -enable-kvm \
--vga none -device virtio-gpu-pci
-# -vga qxl
+-m 8192 -smp 1 -enable-kvm \
+-display gtk,zoom-to-fit=on \
+-vga qxl
+# -vga none -device virtio-gpu-pci
+# -vga vmware
+# -vga none -device qxl-vga,vgamem_mb=32
 
 default: examples/keeper/home/reconfigure
 
 all: ares
 	@echo default target
 
-install:
-	@echo some installation will happen here
-
 check:
 	guile -L ./src -L ./tests -L ./files/emacs/gider/src -c \
 	'((@ (rde test-runners) run-project-tests-cli))'
 
-guix:
-	make -C examples guix
+guix-pull:
+	make -C examples guix-pull
 
 ares:
-	make -C examples ares
+	${GUIX} shell ${DEV_ENV_LOAD_PATH} \
+	guile-next guile-ares-rs \
+	-e '(@ (rde env dev packages) guix-package)' \
+	-- guile \
+	${DEV_SRC_LOAD_PATH} \
+	-c \
+"(begin (use-modules (guix gexp)) #;(load gexp reader macro globally) \
+((@ (ares server) run-nrepl-server)))"
 
-repl: ares-rs
-
+repl: ares
 
 examples/t450/home/reconfigure:
 	make -C examples t450/home/reconfigure
@@ -37,10 +55,15 @@ examples/t450/home/reconfigure:
 examples/keeper/home/reconfigure:
 	make -C examples keeper/home/reconfigure
 
-examples/ixy/home/build:
-	make -C examples t450/home/build
+examples/ixy/home/reconfigure:
+	RDE_TARGET=ixy-home ${GUIX} home \
+	${RDE_SRC_LOAD_PATH} ${EXAMPLES_LOAD_PATH} \
+	reconfigure ${CONFIGS}
 
-.PHONY: examples/target/rde-live.iso
+examples/ixy/home/build:
+	RDE_TARGET=ixy-home ${GUIX} home \
+	${RDE_SRC_LOAD_PATH} ${EXAMPLES_LOAD_PATH} \
+	build ${CONFIGS}
 
 examples/target/rde-live.iso:
 	make -C examples target/rde-live.iso
@@ -71,6 +94,7 @@ doc/rde.info: doc/rde.texi
 	makeinfo -o doc/rde.info doc/rde.texi
 
 doc/rde.html: doc/rde.texi
+	${GUIX} shell texinfo -- \
 	makeinfo --html --no-split \
 	--css-ref=/assets/manual.css \
 	-c "EXTRA_HEAD=<meta name=\"viewport\" \

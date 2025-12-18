@@ -193,13 +193,8 @@ source files.")
                                        libuv "/lib:"
                                        zlib "/lib"
                                        "'],"))))))
-               ;; (add-before 'patch-additional-hardcoded-program-references 'delete-problematic-test
-               ;;   (lambda* (#:key inputs #:allow-other-keys)
-               ;;     ;; "No such file or directory" on 'patch-additional-hardcoded-program-references'
-               ;;     (delete-file "test/parallel/test-stdin-from-file-spawn.js")))
-
                (delete 'patch-additional-hardcoded-program-references)
-
+               (delete 'patch-problematic-tests)
                (replace 'delete-problematic-tests
                  (lambda* (#:key inputs #:allow-other-keys)
 
@@ -274,7 +269,7 @@ source files.")
       perl
       pkg-config
       procps
-      python
+      python-3.10
       util-linux))
     (inputs
      (list bash-minimal

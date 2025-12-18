@@ -1,6 +1,6 @@
 ;;; rde --- Reproducible development environment.
 ;;;
-;;; Copyright © 2023, 2024 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2023, 2024, 2025 Andrew Tropin <andrew@trop.in>
 ;;;
 ;;; This file is part of rde.
 ;;;
@@ -61,7 +61,8 @@
 
    (feature-pipewire)
    (feature-backlight #:step 10)
-   (feature-networking)))
+   (feature-networking)
+   (feature-shepherd)))
 
 (define-public rde-desktop
   (list

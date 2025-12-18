@@ -1,6 +1,6 @@
 ;;; rde --- Reproducible development environment.
 ;;;
-;;; Copyright © 2021, 2022, 2023, 2024 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2021, 2022, 2023, 2024, 2025 Andrew Tropin <andrew@trop.in>
 ;;; Copyright © 2022 Samuel Culpepper <samuel@samuelculpepper.com>
 ;;; Copyright © 2024 Demis Balbach <db@minikn.xyz>
 ;;; Copyright © 2024, 2025 Nicolas Graves <ngraves@ngraves.fr>
@@ -21,8 +21,8 @@
 ;;; along with rde.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (rde packages emacs-xyz)
-  #:use-module (rde packages messaging)
   #:use-module (gnu packages emacs)
+  #:use-module (gnu packages emacs-build)
   #:use-module (gnu packages emacs-xyz)
   #:use-module (gnu packages mail)
   #:use-module (gnu packages texinfo)
@@ -41,12 +41,12 @@
   #:use-module ((guix licenses) #:prefix license:))
 
 (define-public emacs-arei-latest
-  (let* ((commit "cec17d88f452f740ac007a07b10de403e76b0ccb")
-         (revision "1"))
+  (let* ((commit "6741d93ebee0a3c9755b1b6722126d9e1145d310")
+         (revision "3"))
     (package
       (inherit emacs-arei)
       (name "emacs-arei")
-      (version (git-version "0.9.5" revision commit))
+      (version (git-version "0.9.6" revision commit))
       (source
        (origin
          (method git-fetch)
@@ -56,30 +56,38 @@
          (file-name (git-file-name name version))
          (sha256
           (base32
-           "1k68247p8sx6mzagbic0wn671ilax51hbra3p38g8vq5b4yx54bn"))))
+           "1c2yx4wn04ns9igk6pw02ir68hwpb2wk0nqvm6hfx7zliy079h69"))))
+      (arguments
+       (list
+        #:lisp-directory "lisp"
+        #:tests? #f))
+      (propagated-inputs (append
+                          (package-propagated-inputs emacs-arei)
+                          (list (list "emacs-consult" emacs-consult))))
       (build-system emacs-build-system))))
 
 (define-public emacs-justify-kp
- (let ((commit "385e6b8b909ae0f570f30101cec3677e21c9e0a0"))
-  (package
-   (name "emacs-justify-kp")
-   (version "20171119")
-   (home-page "https://github.com/qzdl/justify-kp")
-   (source
-    (origin
-     (method git-fetch)
-     (uri (git-reference
-           (url home-page)
-           (commit commit)))
-     (file-name (git-file-name name version))
-     (sha256
-      (base32 "13fylx4mvw7cgzd2mq060x43b1x7g5vdf16jm49c31f6b3jj1qi0"))))
-   (build-system emacs-build-system)
-   (inputs (list emacs-dash emacs-s))
-   (synopsis "Paragraph justification for emacs using Knuth/Plass algorithm ")
-   (description
-    "Paragraph justification for emacs using Knuth/Plass algorithm ")
-   (license license:gpl3+))))
+  (let ((commit "33a186e297c0359547820088669486afd7b5fddb")
+        (revision "1"))
+    (package
+      (name "emacs-justify-kp")
+      (version (git-version "0.0.1" revision commit))
+      (home-page "https://github.com/Fuco1/justify-kp")
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url home-page)
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "14k75m10lxfknij5np5s4hhl9d7qbmkdcqkq145hkhgp81qgld73"))))
+      (build-system emacs-build-system)
+      (inputs (list emacs-dash emacs-s))
+      (synopsis "Paragraph justification for emacs using Knuth/Plass algorithm")
+      (description
+       "Paragraph justification for emacs using Knuth/Plass algorithm ")
+      (license license:gpl3+))))
 
 (define-public emacs-eslint-fix
  (let ((commit "636bf8d8797bdd58f1b543c9d3f4910e3ce879ab"))
@@ -164,14 +172,14 @@ parser.")
   (package
     (inherit emacs-minions)
     (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (add-after 'unpack 'make-it-update-header-line
-           (lambda* (#:key outputs #:allow-other-keys)
-             (substitute* "minions.el"
-	       (("mode-line-format")
-                "header-line-format"))
-             #t)))))))
+     (substitute-keyword-arguments (package-arguments emacs-minions)
+       ((#:phases phases #~%standard-phases)
+        #~(modify-phases #$phases
+            (add-after 'unpack 'make-it-update-header-line
+              (lambda* (#:key outputs #:allow-other-keys)
+                (substitute* "minions.el"
+	          (("mode-line-format")
+                   "header-line-format"))))))))))
 
 (define-public emacs-git-email-sans-mu4e
   (package
@@ -282,6 +290,63 @@ to manipulate and navigate hunks.")))
     `(("emacs-geiser" . ,(const emacs-geiser-latest))))
    emacs-guix))
 
+(define-public emacs-guix-minimal
+  (package
+    (inherit emacs-guix)
+    (build-system emacs-build-system)
+    (native-inputs '())
+    (inputs '())
+    (propagated-inputs '())
+    (arguments
+     (list
+      #:include ''("\
+^guix-(auto-mode|build-log|derivation|env-var|prettify|scheme|utils)\\.el")
+      #:modules '((guix build emacs-build-system)
+                  (guix build utils)
+                  (srfi srfi-26)
+                  (srfi srfi-71)
+                  (ice-9 regex)
+                  (ice-9 textual-ports))
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'patch-source
+            (lambda _
+              (chdir "elisp")
+              (let* ((all (call-with-input-file "guix-utils.el"
+                            get-string-all))
+                     (match-str
+                      (lambda (from to base)
+                        (let ((res (string-match
+                                    (string-append "(" from ".*)" to)
+                                    base)))
+                          (values (and res (match:substring res 1))
+                                  (match:suffix res)))))
+                     (pprint rest (match-str
+                                   "\\(cl-defun guix-pretty-print-buffer"
+                                   "\\(defun guix-pretty-print-file"
+                                   all))
+                     (search rest (match-str
+                                   "\\(defmacro guix-while-search"
+                                   "\\(defmacro guix-while-null"
+                                   rest)))
+                (substitute* "guix-build-log.el"
+                  (("guix-find-file-or-url") "find-file-existing"))
+                (substitute* "guix-derivation.el"
+                  (("guix-find-file") "find-file-existing"))
+                (call-with-output-file "guix-utils.el"
+                  (lambda (port)
+                    (display "(require 'cl-lib)\n\n" port)
+                    (for-each
+                     (cut display <> port)
+                     (list pprint search
+                           (match-str ";;; Fontification" ";;; Diff" rest)))
+                    (display "(provide 'guix-utils)" port)))))))))
+    (description
+     (string-append (package-description emacs-guix) "
+
+Note: This is a minimalist variant of emacs-guix, with simply
+file prettification."))))
+
 (define-public emacs-telega-server-latest emacs-telega-server)
 
 (define-public emacs-telega-latest emacs-telega)
@@ -368,6 +433,36 @@ programming language, powered by the tree-sitter-clojure tree-sitter grammar."))
  from a url and save it into a bibtex file. It also provides a way to obtain a
  list of attachments (e.g. PDF files) associated with a url. This is done
  using Zotero translators, but without using the Zotero client."))))
+
+(define-public emacs-arei-shepherd
+  (package
+    (name "emacs-arei-shepherd")
+    (version "0.3")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://codeberg.org/cons-town/guile-debugger")
+                    (commit (string-append "arei-shepherd-" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0f32ymabyhz0bczsic4z35l36vharlfjrsm0hdsj4hd1c836qacy"))))
+    (build-system emacs-build-system)
+    (arguments
+     (list
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'discover-package
+            (lambda _
+              (symlink "shepherd-nrepl/src/elisp/arei-shepherd.el"
+                       "arei-shepherd.el"))))))
+    (inputs (list emacs-arei-latest
+                  emacs-embark))
+    (home-page "https://codeberg.org/cons-town/guile-debugger")
+    (synopsis "Shepherd interface for Arei")
+    (description "arei-shepherd is an extension for Arei that allows to interract with
+the shepherd via the ares-shepherd extension for the nREPL.")
+    (license license:gpl3+)))
 
 ;; Andrew Zhurov's sandbox
 (use-modules (guix download))
@@ -596,5 +691,3 @@ Org-Roam-UI is meant a successor of org-roam-server that extends functionality o
   (list '(1 . 2))
   (package-name emacs-org-media-note)
   (object->string emacs-org-media-note))
-
-emacs-jdecomp

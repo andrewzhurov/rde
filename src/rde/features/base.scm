@@ -1,6 +1,7 @@
 ;;; rde --- Reproducible development environment.
 ;;;
 ;;; Copyright © 2021, 2022, 2023, 2024 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2024, 2025 Nicolas Graves <ngraves@ngraves.fr>
 ;;;
 ;;; This file is part of rde.
 ;;;
@@ -19,7 +20,7 @@
 
 (define-module (rde features base)
   #:use-module (rde features)
-  #:use-module (rde features predicates)
+  #:use-module (rde predicates)
   #:use-module (rde system services admin)
 
   #:use-module (gnu system)
@@ -35,11 +36,12 @@
   #:use-module (gnu services avahi)
   #:use-module (gnu services dbus)
   #:use-module (gnu home services)
+  #:use-module (gnu home services admin)
   #:use-module (gnu home services desktop)
   #:use-module (gnu home services shepherd)
 
   #:use-module (gnu packages avahi)
-  #:use-module (gnu packages certs)
+  #:use-module (gnu packages nss)
   #:use-module (gnu packages fonts)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages bash)
@@ -53,6 +55,8 @@
 
   #:use-module (srfi srfi-1)
   #:use-module (guix gexp)
+  #:use-module (guix diagnostics)
+  #:use-module (guix i18n)
 
   #:export (feature-user-info
             feature-base-packages
@@ -105,7 +109,7 @@
           (home-packages '())
           (system-packages '())
           (base-system-packages %rde-base-system-packages)
-          (base-home-packages (list `(,rde "doc"))))
+          (base-home-packages (list glibc-locales rde-doc)))
   "Provides base packages and allows to specify additional standalone
 packages for home-environment, or operating-system, or both.
 Standalone means that packages do not require configuration and not
@@ -171,7 +175,7 @@ be a symbol, which will be used to construct feature name."
    (service guix-service-type)
    (service nscd-service-type)
 
-   (service rottlog-service-type)
+   (service log-rotation-service-type)
    (service log-cleanup-service-type
             (log-cleanup-configuration
              (directory "/var/log/guix/drvs")))
@@ -185,27 +189,49 @@ be a symbol, which will be used to construct feature name."
             `(("/bin/sh" ,(file-append bash "/bin/sh"))
               ("/usr/bin/env" ,(file-append coreutils "/bin/env"))))))
 
-(define %rde-default-substitute-urls %default-substitute-urls)
-(define %rde-default-authorized-guix-keys %default-authorized-guix-keys)
+(define %rde-base-home-services
+  ;; Non-essential but useful services to have by default.
+  (list (service home-log-rotation-service-type)
+        (service home-shepherd-timer-service-type)
+        (service home-shepherd-transient-service-type)))
 
 (define* (feature-base-services
           #:key
-          (default-substitute-urls %rde-default-substitute-urls)
-          (default-authorized-guix-keys %rde-default-authorized-guix-keys)
-          (guix-substitute-urls '())
-          (guix-authorized-keys '())
+          (default-substitute-urls #f)
+          (default-authorized-guix-keys #f)
+          (guix-substitute-urls #f)
+          (guix-authorized-keys #f)
           (guix-daemon-extra-options
            (list "--gc-keep-derivations=yes" "--gc-keep-outputs=yes"))
+          (guix-daemon-privileged? #t)
           (udev-rules '())
           (guix-http-proxy #f)
-          (base-system-services %rde-base-system-services))
+          (base-system-services %rde-base-system-services)
+          (base-home-services %rde-base-home-services))
   "Provides base system services."
-  (ensure-pred list-of-services? base-system-services)
-  (ensure-pred list-of-strings? guix-substitute-urls)
-  (ensure-pred list-of-file-likes? guix-authorized-keys)
   (ensure-pred list-of-strings? guix-daemon-extra-options)
+  (ensure-pred boolean? guix-daemon-privileged?)
   (ensure-pred list-of-file-likes? udev-rules)
   (ensure-pred maybe-string? guix-http-proxy)
+  (ensure-pred list-of-services? base-system-services)
+  (ensure-pred list-of-services? base-home-services)
+
+  (when default-substitute-urls
+    (warning
+     (G_ "'~a' in feature-base-services is deprecated and ignored, use '~a' instead~%")
+     'default-substitute-urls 'guix-extensions))
+  (when default-authorized-guix-keys
+    (warning
+     (G_ "'~a' in feature-base-services is deprecated and ignored, use '~a' instead~%")
+     'default-authorized-guix-keys 'guix-extensions))
+  (when guix-substitute-urls
+    (warning
+     (G_ "'~a' in feature-base-services is deprecated and ignored, use '~a' instead~%")
+     'guix-substitute-urls 'guix-extensions))
+  (when guix-authorized-keys
+    (warning
+     (G_ "'~a' in feature-base-services is deprecated and ignored, use '~a' instead~%")
+     'guix-authorized-keys 'guix-extensions))
 
   (define (get-base-system-services cfg)
     (append
@@ -221,12 +247,7 @@ be a symbol, which will be used to construct feature name."
         config =>
         (guix-configuration
          (inherit config)
-         (substitute-urls (append
-                           guix-substitute-urls
-                           default-substitute-urls))
-         (authorized-keys (append
-                           guix-authorized-keys
-                           default-authorized-guix-keys))
+         (privileged? guix-daemon-privileged?)
          (extra-options guix-daemon-extra-options)
          (http-proxy guix-http-proxy)))
        (greetd-service-type
@@ -257,7 +278,8 @@ Defaults:%wheel env_keep+=TERMINFO")))))
    (name 'base-services)
    (values `((base-services . #t)
              (number-of-ttys . ,%number-of-ttys)))
-   (system-services-getter get-base-system-services)))
+   (system-services-getter get-base-system-services)
+   (home-services-getter (const base-home-services))))
 
 (define %rde-desktop-system-services
   (list

@@ -1,6 +1,6 @@
 ;;; rde --- Reproducible development environment.
 ;;;
-;;; Copyright © 2022, 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2025 Nicolas Graves <ngraves@ngraves.fr>
 ;;;
 ;;; This file is part of rde.
 ;;;
@@ -17,21 +17,14 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with rde.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (rde packages messaging)
-  #:use-module (gnu packages)
-  #:use-module (gnu packages messaging)
-  #:use-module (gnu packages compression)
-  #:use-module (gnu packages documentation)
-  #:use-module (gnu packages gperf)
-  #:use-module (gnu packages php)
-  #:use-module (gnu packages tls)
+(define-module (contrib features substitutes)
+  #:use-module (rde features)
+  #:use-module (contrib services substitutes)
+  #:export (feature-guix-north-america))
 
-  #:use-module (guix build-system cmake)
-  #:use-module (guix download)
-  #:use-module (guix gexp)
-  #:use-module (guix git-download)
-  #:use-module ((guix licenses) #:prefix license:)
-  #:use-module (guix packages)
-  #:use-module (guix utils))
-
-(define-public tdlib-latest tdlib)
+(define (feature-guix-north-america)
+  "This feature simply provides substitutes from Guix North America."
+  (feature
+   (name 'guix-north-america)
+   (system-services-getter
+    (const (list guix-north-america-substitutes-service)))))

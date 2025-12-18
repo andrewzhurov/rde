@@ -1,6 +1,6 @@
 ;;; rde --- Reproducible development environment.
 ;;;
-;;; Copyright © 2021, 2022, 2023 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2021, 2022, 2023, 2025 Andrew Tropin <andrew@trop.in>
 ;;; Copyright © 2022 Samuel Culpepper <samuel@samuelculpepper.com>
 ;;; Copyright © 2023 Miguel Ángel Moreno <me@mianmoreno.com>
 ;;;
@@ -22,7 +22,7 @@
 (define-module (rde features fontutils)
   #:use-module (rde features)
   #:use-module (rde features emacs)
-  #:use-module (rde features predicates)
+  #:use-module (rde predicates)
   #:use-module (rde serializers elisp)
   #:use-module (rde packages fonts)
   #:use-module (gnu home services)
@@ -36,11 +36,13 @@
   #:use-module (srfi srfi-9)
 
   #:export (feature-fonts
+            feature-font-japanese
 
             font
             font-size
             font-name
             font-weight
+            font-package
             font-specification
             make-font
             font?))
@@ -130,23 +132,22 @@ font-monospace default value, and it will be ignored if
      (simple-service
       'add-fontconfig-font-families
       home-fontconfig-service-type
-      (list
-       `(alias
-         (family "sans-serif")
-         (prefer
-          (family ,(font-name font-sans))))
-       `(alias
-         (family "serif")
-         (prefer
-          (family ,(font-name font-serif))))
-       `(alias
-         (family "monospace")
-         (prefer
-          (family ,(font-name font-monospace))))
-       `(alias
-         (family "emoji")
-         (prefer
-          (family ,(font-name font-unicode))))))
+      `((match (test (@ (name "family") (compare "contains"))
+                     (string "sans-serif"))
+          (edit (@ (name "family") (mode "prepend") (binding "strong"))
+                (string ,(font-name font-sans))))
+        (match (test (@ (name "family") (compare "contains"))
+                     (string "serif"))
+          (edit (@ (name "family") (mode "prepend") (binding "strong"))
+                (string ,(font-name font-serif))))
+        (match (test (@ (name "family") (compare "contains"))
+                     (string "monospace"))
+          (edit (@ (name "family") (mode "prepend") (binding "strong"))
+                (string ,(font-name font-monospace))))
+        (match (test (@ (name "family") (compare "contains"))
+                     (string "emoji"))
+          (edit (@ (name "family") (mode "prepend") (binding "strong"))
+                (string ,(font-name font-unicode))))))
 
      (rde-elisp-configuration-service
       f-name
@@ -231,4 +232,48 @@ font-monospace default value, and it will be ignored if
        (emacs-faces . #t))
      (make-feature-values font-sans font-monospace
                           font-serif font-unicode)))
+   (home-services-getter get-home-services)))
+
+(define* (feature-font-japanese
+          #:key
+          (font-japanese
+           (font
+            (name "Koruri")
+            (size 11)
+            (package font-koruri))))
+  "Configure Japanese font.  Sets font families for Kana and Han characters to
+FONT-JAPANESE, for proper rendering of Japanese text in Emacs."
+
+  (ensure-pred font? font-japanese)
+
+  (define (get-home-services config)
+    "Return home services for Japanese font configuration."
+    (list
+     (simple-service
+      'add-japanese-font
+      home-profile-service-type
+      (list (font-package font-japanese)))
+     (simple-service
+      'fontconfig-add-japanese-font
+      home-fontconfig-service-type
+      `((match (test (@ (name "family") (compare "contains"))
+                     (string "sans-serif"))
+          (edit (@ (name "family") (mode "append") (binding "strong"))
+                (string ,(font-name font-japanese))))
+        (match (test (@ (name "lang") (compare "contains"))
+                     (string "ja"))
+          (edit (@ (name "family") (mode "prepend"))
+                (string ,(font-name font-japanese))))))
+     (rde-elisp-configuration-service
+      'font-japanese
+      config
+      `((with-eval-after-load 'fontset
+          (set-fontset-font
+           t 'kana (font-spec :family ,(font-name font-japanese)))
+          (set-fontset-font
+           t 'han (font-spec :family ,(font-name font-japanese))))))))
+
+  (feature
+   (name 'fonts-japanese)
+   (values `((font-japanese . ,font-japanese)))
    (home-services-getter get-home-services)))

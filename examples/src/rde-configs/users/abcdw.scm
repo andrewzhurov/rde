@@ -5,6 +5,8 @@
   #:use-module (gnu home services)
   #:use-module (gnu home-services ssh)
   #:use-module (gnu packages)
+  #:use-module (gnu packages emacs-xyz)
+  #:use-module (gnu packages guile-xyz)
   #:use-module (gnu services)
   #:use-module (guix channels)
   #:use-module (guix download)
@@ -13,29 +15,34 @@
   #:use-module (guix packages)
   #:use-module (rde features android)
   #:use-module (rde features base)
-  #:use-module (rde features wm)
   #:use-module (rde features clojure)
+  #:use-module (rde features containers)
+  #:use-module (rde features emacs)
   #:use-module (rde features emacs-xyz)
+  #:use-module (rde features fontutils)
   #:use-module (rde features gnupg)
+  #:use-module (rde features gtk)
+  #:use-module (rde features guile)
   #:use-module (rde features irc)
   #:use-module (rde features keyboard)
-  #:use-module (rde features mail)
-  #:use-module (rde features networking)
-  #:use-module (rde features password-utils)
-  #:use-module (rde features security-token)
-  #:use-module (rde features system)
-  #:use-module (rde features xdg)
-  #:use-module (rde features markup)
   #:use-module (rde features libreoffice)
-  #:use-module (rde features containers)
-  #:use-module (rde features virtualization)
+  #:use-module (rde features llm)
+  #:use-module (rde features mail)
+  #:use-module (rde features markup)
+  #:use-module (rde features networking)
   #:use-module (rde features ocaml)
+  #:use-module (rde features password-utils)
   #:use-module (rde features presets)
+  #:use-module (rde features security-token)
+  #:use-module (rde features sourcehut)
+  #:use-module (rde features system)
+  #:use-module (rde features terminals)
+  #:use-module (rde features uml)
   #:use-module (rde features version-control)
   #:use-module (rde features video)
-  #:use-module (rde features terminals)
-  #:use-module (rde features gtk)
-  #:use-module (rde features sourcehut)
+  #:use-module (rde features virtualization)
+  #:use-module (rde features wm)
+  #:use-module (rde features xdg)
   #:use-module (rde features)
   #:use-module (rde home services emacs)
   #:use-module (rde home services i2p)
@@ -68,64 +75,88 @@
 
 ;;; Service extensions
 
-(define emacs-extra-packages-service
-  (simple-service
-   'emacs-extra-packages
-   home-emacs-service-type
-   (home-emacs-extension
-    (init-el
-     `((with-eval-after-load 'org
-         (setq org-use-speed-commands t)
-         (setq org-enforce-todo-dependencies t)
-         ;; (setq org-enforce-todo-checkbox-dependencies t)
-         (setq org-log-reschedule 'time)
-         (defun rde-org-goto-end-of-heading ()
-           (interactive)
-           (org-end-of-meta-data t)
-           (end-of-line)
-           (unless (bolp)
-             (newline)))
-         (define-key org-mode-map (kbd "M-o") 'rde-org-goto-end-of-heading))
+(define* (feature-personal-emacs-config)
+  "Personal Emacs configuration with extra packages and settings."
+  (define f-name 'personal-emacs-config)
 
-       (with-eval-after-load 'geiser-mode
-         (setq geiser-mode-auto-p nil)
-         (defun abcdw-geiser-connect ()
-           (interactive)
-           (geiser-connect 'guile "localhost" "37146"))
+  (define (get-home-services config)
+    (list
+     (rde-elisp-configuration-service
+      f-name
+      config
+      `((with-eval-after-load 'org
+          (setq org-use-speed-commands t)
+          (setq org-enforce-todo-dependencies t)
+          ;; (setq org-enforce-todo-checkbox-dependencies t)
+          (setq org-log-reschedule 'time)
+          (defun rde-org-goto-end-of-heading ()
+            (interactive)
+            (org-end-of-meta-data t)
+            (left-char)
+            (unless (string-blank-p (buffer-substring (line-beginning-position)
+                                                      (line-end-position)))
+              (newline)))
+          (define-key org-mode-map (kbd "M-o") 'rde-org-goto-end-of-heading))
 
-         (define-key geiser-mode-map (kbd "C-c M-j") 'abcdw-geiser-connect))
+        (with-eval-after-load 'geiser-mode
+          (setq geiser-mode-auto-p nil)
+          (defun abcdw-geiser-connect ()
+            (interactive)
+            (geiser-connect 'guile "localhost" "37146"))
 
-       (with-eval-after-load 'simple
-         (setq-default display-fill-column-indicator-column 80)
-         (add-hook 'prog-mode-hook 'display-fill-column-indicator-mode))
+          (define-key geiser-mode-map (kbd "C-c M-j") 'abcdw-geiser-connect))
 
-       (setq copyright-names-regexp
-             (format "%s <%s>" user-full-name user-mail-address))
-       (add-hook 'after-save-hook (lambda () (copyright-update nil nil)))))
-    (elisp-packages
-     (append
-      (list
-       ;; (@ (rde packages emacs-xyz) emacs-corfu-candidate-overlay)
-       )
-      (strings->packages
-       ;; "emacs-dirvish"
-       "emacs-elixir-mode"
-       "emacs-company-posframe"
-       "emacs-eat"
-       "emacs-wgrep"
-       "emacs-ox-haunt"
-       "emacs-haskell-mode"
-       "emacs-rainbow-mode"
-       "emacs-hl-todo"
-       "emacs-yasnippet"
-       ;; "emacs-consult-dir"
-       "emacs-kind-icon"
-       "emacs-nginx-mode" "emacs-yaml-mode"
-       "emacs-multitran"
-       "emacs-minimap"
-       "emacs-ement"
-       "emacs-restart-emacs"
-       "emacs-org-present"))))))
+        (with-eval-after-load 'page-break-lines
+          (global-page-break-lines-mode 1))
+        (with-eval-after-load 'simple
+          (setq-default display-fill-column-indicator-column 80)
+          (add-hook 'prog-mode-hook 'display-fill-column-indicator-mode))
+
+        (setq copyright-names-regexp
+              (format "%s <%s>" user-full-name user-mail-address))
+        (add-hook 'after-save-hook (lambda () (copyright-update nil nil))))
+      #:elisp-packages
+      (append
+       (list
+        ;; (@ (rde packages emacs-xyz) emacs-corfu-candidate-overlay)
+        )
+       (strings->packages
+        ;; "emacs-dirvish"
+        "emacs-elixir-mode"
+        "emacs-company-posframe"
+        "emacs-wgrep"
+        "emacs-ox-haunt"
+        "emacs-haskell-mode"
+        "emacs-rainbow-mode"
+        "emacs-hl-todo"
+        "emacs-yasnippet"
+        ;; "emacs-xkb-mode"
+        ;; "emacs-consult-dir"
+        "emacs-kind-icon"
+        "emacs-nginx-mode" "emacs-yaml-mode"
+        "emacs-multitran"
+        "emacs-minimap"
+        "emacs-ement"
+        "emacs-restart-emacs"
+        "emacs-org-present")))))
+  (feature
+   (name f-name)
+   (values `((,f-name . #t)))
+   (home-services-getter get-home-services)))
+
+(define-public emacs-arei-local
+  (package
+    (inherit emacs-arei)
+    (version "0.9.99999")
+    (source
+     (local-file "/data/abcdw/work/abcdw/emacs-arei" #:recursive? #t))))
+
+(define-public guile-ares-rs-local
+  (package
+    (inherit guile-ares-rs)
+    (version "0.9.99999")
+    (source
+     (local-file "/data/abcdw/work/abcdw/guile-ares-rs" #:recursive? #t))))
 
 (define home-extra-packages-service
   (simple-service
@@ -134,8 +165,7 @@
    (append
     (list
      (@ (gnu packages tree-sitter) tree-sitter-clojure)
-     (@ (gnu packages tree-sitter) tree-sitter-html)
-     (@ (gnu packages guile) guile-next))
+     (@ (gnu packages tree-sitter) tree-sitter-html))
     (strings->packages
      "figlet" ;; TODO: Move to emacs-artist-mode
      ;; "calibre"
@@ -167,7 +197,7 @@
      "kdenlive"
      ;; "glib:bin"
 
-     "ffmpeg"
+     ;; "ffmpeg"
      "ripgrep" "curl"))))
 
 (define (wallpaper url hash)
@@ -185,29 +215,36 @@
   (wallpaper "https://w.wallhaven.cc/full/lm/wallhaven-lmlzwl.jpg"
              "01j5z3al8zvzqpig8ygvf7pxihsj2grsazg9yjiqyjgsmp00hpaf"))
 
-
-
 (define sway-extra-config-service
   (simple-service
    'sway-extra-config
    home-sway-service-type
-   `((output DP-2 scale 2)
+   `((output HDMI-A-1 scale 2)
+     (output DP-2 scale 2)
+     ;; (gaps bottom 90)
      ;; (output * bg ,wallpaper-ai-art center)
      ;; (output eDP-1 disable)
      ,@(map (lambda (x) `(workspace ,x output DP-2)) (iota 8 1))
 
+     ,@(append-map
+        (lambda (x)
+          `(;; (bindsym --to-code ,(format #f "$mod+~a" (modulo x 10))
+            ;;          workspace number ,x)
+            (bindsym --to-code ,(format #f "$mod+Control+~a" (modulo x 10))
+                     move container to workspace number ,x)))
+        (iota 10 1))
      ;; (workspace 9 output DP-2)
      ;; (workspace 10 output DP-2)
 
      ;; (bindswitch --reload --locked lid:on exec /run/setuid-programs/swaylock)
 
      (bindsym
-      --locked $mod+Shift+t exec
+      --locked Pause exec
       ,(file-append (@ (gnu packages music) playerctl) "/bin/playerctl")
       play-pause)
 
      (bindsym
-      --locked $mod+Shift+n exec
+      --locked $mod+Alt+n exec
       ,(file-append (@ (gnu packages music) playerctl) "/bin/playerctl")
       next)
 
@@ -215,7 +252,7 @@
      (bindsym $mod+Ctrl+o focus output left)
      (input type:touchpad
             ;; TODO: Move it to feature-sway or feature-mouse?
-            (;; (natural_scroll enabled)
+            ((natural_scroll enabled)
              (tap enabled)))
 
      ;; (xwayland disable)
@@ -229,8 +266,7 @@
     (mpv-conf
      `((global
         ((keep-open . yes)
-         (ytdl-format . "bestvideo[height<=?720][fps<=?30][vcodec!=?vp9]+bestaudio/best
-")
+         (ytdl-format . "bestvideo[height<=?720][fps<=?30][vcodec!=?vp9]+bestaudio/best")
          (save-position-on-quit . yes)
          (speed . 1.61))))))))
 
@@ -263,6 +299,12 @@
                  (port . ,(+ 10020 id))))))
            (iota 4))
       (list
+       (ssh-host
+        (host "*.cons.town")
+        (options
+         '((user . "root")
+           (port . 22)
+           (compression . #t))))
        (ssh-host
         (host "pinky-ygg")
         (options
@@ -301,13 +343,12 @@ if [ -f $GUIX_PROFILE/etc/profile ]; then source $GUIX_PROFILE/etc/profile; fi
    #:feature-name-prefix 'abcdw
    #:home-services
    (list
-    emacs-extra-packages-service
     home-extra-packages-service
     sway-extra-config-service
     ssh-extra-config-service
     i2pd-add-ilita-irc-service
-    mpv-add-user-settings-service
-    rde-guix-add-to-shell-profile-service)))
+    ;; rde-guix-add-to-shell-profile-service
+    mpv-add-user-settings-service)))
 
 ;;; User-specific features with personal preferences
 
@@ -363,10 +404,14 @@ if [ -f $GUIX_PROFILE/etc/profile ]; then source $GUIX_PROFILE/etc/profile; fi
                 kernel
                 swaylock
                 xdg
+                guile
                 git)))
            %all-features)
    (list
     (feature-git)
+    (feature-guile
+     #:guile-ares-rs guile-ares-rs-local
+     #:emacs-arei emacs-arei-local)
     (feature-kernel
      #:kernel-arguments '("snd_hda_intel.dmic_detect=0")
      #:firmware (list example-firmware))
@@ -391,9 +436,7 @@ if [ -f $GUIX_PROFILE/etc/profile ]; then source $GUIX_PROFILE/etc/profile; fi
       (templates "$HOME")))
 
 
-    (feature-base-services
-     #:default-substitute-urls (list "https://bordeaux.guix.gnu.org"
-                                     "https://ci.guix.gnu.org")))))
+    (feature-base-services))))
 
 (define-public %abcdw-features
   (append
@@ -460,11 +503,9 @@ if [ -f $GUIX_PROFILE/etc/profile ]; then source $GUIX_PROFILE/etc/profile; fi
                       (network "irc.oftc.net")
                       (nick "abcdw"))))
 
-    (feature-ssh-proxy #:host "pinky-ygg" #:auto-start? #f)
-    (feature-ssh-proxy #:host "pinky-ygg" #:name "hundredrps"
-                       #:proxy-string "50080:localhost:8080"
-                       #:reverse? #t
-                       #:auto-start? #f)
+    (feature-ssh-proxy  #:host "pinky-ygg" #:auto-start? #f)
+    (feature-ssh-tunnel #:host "pinky-ygg" #:name "pinky-web-server"
+                        #:auto-start? #t)
 
     (feature-foot)
     (feature-yggdrasil)
@@ -473,6 +514,7 @@ if [ -f $GUIX_PROFILE/etc/profile ]; then source $GUIX_PROFILE/etc/profile; fi
      ;; 'purokishi.i2p
      #:less-anonymous? #t)
 
+    (feature-personal-emacs-config)
     (feature-emacs-keycast #:turn-on? #t)
 
     (feature-emacs-tempel
@@ -538,7 +580,7 @@ if [ -f $GUIX_PROFILE/etc/profile ]; then source $GUIX_PROFILE/etc/profile; fi
      #:elfeed-org-files '("/data/abcdw/work/abcdw/private/rss.org"))
 
     (feature-android)
-    (feature-javascript)
+    ;; (feature-javascript)
     (feature-ocaml #:opam? #t)
 
     (feature-emacs-piem
@@ -558,6 +600,9 @@ if [ -f $GUIX_PROFILE/etc/profile ]; then source $GUIX_PROFILE/etc/profile; fi
                        :coderepo "~/work/gnu/guix/")))
     ;; TODO: move feature to general, move extra configuration to service.
     (feature-notmuch
+     #:notmuch-queries
+     '((rde-all . "to:\"rde-devel\" or to:\"rde-discuss\" or tag:rde")
+       (rde-inbox . "query:rde-all and tag:inbox"))
      #:extra-tag-updates-post
      '("notmuch tag +guix-home +inbox -- 'thread:\"\
 {((subject:guix and subject:home) or (subject:service and subject:home) or \
@@ -571,12 +616,23 @@ subject:/home:/) and tag:new}\"'"
          :key "t")
         (:name "Drafts" :query "tag:draft" :key "d")
         (:name "Watching" :query "thread:{tag:watch} and tag:unread" :key "w")
+        (:name "RDE Inbox"
+         :query "query:rde-inbox" :key "ir")
+        (:name "RDE All"
+         :query "query:rde-all" :key "pr")
+        (:name "Project Debugger: RDE Internship 2025"
+         :query "rde internship or tag:guile-debugger" :key "pd")
+        (:name "Project Suitbl"
+         :query "to: 2024-10-272@NLnet.nl or tag:suitbl" :key "ps")
+        (:name "Work Inbox (Unsorted)"
+         :query "(tag:work and tag:inbox) and not query:rde-all"
+         :key "iu")
         (:name "Work Inbox"
          :query "tag:work and tag:inbox"
-         :key "W")
+         :key "iw")
         (:name "Personal Inbox"
          :query "tag:personal and tag:inbox"
-         :key "P")
+         :key "ip")
         (:name "Guix Home Inbox" :key "H" :query "tag:guix-home and tag:unread"))
       ;; %rde-notmuch-saved-searches
       '()))
@@ -585,6 +641,8 @@ subject:/home:/) and tag:new}\"'"
      #:user-name-fn (const "abcdw"))
     (feature-yt-dlp)
 
+    (feature-plantuml)
+    (feature-clojure)
     (feature-libreoffice)
 
     ;; TODO: Remove auctex dependency, which interjects in texinfo-mode.
@@ -592,9 +650,15 @@ subject:/home:/) and tag:new}\"'"
      #:global-bibliography
      (list "/data/abcdw/work/abcdw/notes/bibliography.bib"))
 
+    (feature-font-japanese)
+    (feature-emacs-gptel)
+    (feature-emacs-ellama)
+    (feature-emacs-cua)
     (feature-keyboard
      ;; To get all available options, layouts and variants run:
      ;; cat `guix build xkeyboard-config`/share/X11/xkb/rules/evdev.lst
+     ;; To get a list of symbols and actions:
+     ;; cat `guix build xorgproto`/include/X11/keysymdef.h
      #:keyboard-layout
      (keyboard-layout
       "us,ru" "dvorak,"

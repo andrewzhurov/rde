@@ -25,7 +25,7 @@
 
 (define-module (rde features emacs-xyz)
   #:use-module (rde features)
-  #:use-module (rde features predicates)
+  #:use-module (rde predicates)
   #:use-module (rde features emacs)
   #:use-module (rde features fontutils)
 
@@ -68,7 +68,6 @@
             feature-emacs-eat
             feature-emacs-eshell
             feature-emacs-calc
-            feature-emacs-gptel
             feature-emacs-re-builder
             feature-emacs-comint
             feature-emacs-help
@@ -333,9 +332,8 @@ different level headings will have different size."
       `((eval-when-compile
           (require 'modus-themes)
           (require 'cl-seq))
-        (require ',(symbol-append theme '-theme))
         (eval-when-compile
-         (enable-theme ',theme))
+         (load-theme ',theme :no-confirm))
         (defgroup rde-modus-themes nil
           "Configuration related to `modus-themes'."
           :group 'rde)
@@ -406,9 +404,7 @@ different level headings will have different size."
                     :after 'rde-modus-themes-run-after-enable-theme-hook)
         ,@(map (lambda (hook)
                  `(add-hook 'rde-modus-themes-after-enable-theme-hook ',hook))
-               (append
-                '(rde-modus-themes-set-custom-faces)
-                 extra-after-enable-theme-hooks))
+               extra-after-enable-theme-hooks)
 
         (with-eval-after-load 'rde-keymaps
           (define-key rde-toggle-map (kbd "t") 'modus-themes-toggle))
@@ -474,8 +470,9 @@ different level headings will have different size."
         (load-theme ',theme t (not (display-graphic-p)))
         ,@(if (get-value 'emacs-server-mode? config #f)
               `((add-hook 'server-after-make-frame-hook
-                             (lambda ()
-                               (enable-theme ',theme))))
+                          (lambda ()
+                            (when (null custom-enabled-themes)
+                              (enable-theme ',theme)))))
               '()))
       #:elisp-packages (list emacs-modus-themes)
       #:summary "Modus Themes extensions"
@@ -943,6 +940,8 @@ accordingly set its appearance with DISPLAY-TIME-24HR? and DISPLAY-TIME-DATE?."
    (values `((,f-name . #t)))
    (home-services-getter get-home-services)))
 
+;; TODO: [Andrew Tropin, 2025-07-18] Incorporate TRAMP tweaks
+;; https://coredumped.dev/2025/06/18/making-tramp-go-brrrr./
 (define* (feature-emacs-tramp
           #:key
           (default-method "ssh")
@@ -1300,6 +1299,13 @@ Small tweaks, xdg entry for openning directories in emacs client."
          ;;; <https://www.emacswiki.org/emacs/AnsiColor#h5o-2>
          (add-hook 'eshell-preoutput-filter-functions 'ansi-color-filter-apply)
 
+         (with-eval-after-load 'em-hist
+           (let ((dir (file-name-directory eshell-history-file-name)))
+             (unless (file-exists-p dir)
+               (make-directory dir t)))
+           (setopt eshell-history-size 1024)
+           (setopt eshell-history-append t))
+
          (with-eval-after-load 'em-prompt
           (autoload 'epe-theme-lambda "eshell-prompt-extras")
           (setq eshell-prompt-function 'epe-theme-lambda)
@@ -1359,64 +1365,6 @@ it every EXCHANGE-UPDATE-INTERVAL days."
    (name f-name)
    (values `((,f-name . #t)
              (emacs-calc-currency . ,emacs-calc-currency)))
-   (home-services-getter get-home-services)))
-
-(define* (feature-emacs-gptel
-          #:key
-          (emacs-gptel emacs-gptel)
-          (emacs-gptel-quick emacs-gptel-quick)
-          (gptel-api-key (list "pass" "show" "gptel-api-key"))
-          (default-mode 'org-mode))
-  "Configure Gptel, a simple and unintrusive LLM client for Emacs.
-GPTEL-API-KEY is a list of program and arguments that are called by Emacs and
-that returns a string API key (safer defaults than having it as a string
-on-disk).  By default, it tries to load the `gptel-api-key' from the
-password-store."
-  (ensure-pred file-like? emacs-gptel)
-  (ensure-pred file-like? emacs-gptel-quick)
-  (ensure-pred list-of-strings? gptel-api-key)
-  (ensure-pred (cut member <> '(markdown-mode org-mode text-mode))
-               default-mode)
-
-  (define emacs-f-name 'gptel)
-  (define f-name (symbol-append 'emacs emacs-f-name))
-
-  (define (get-home-services config)
-    "Return home services related to Gptel."
-    (list
-     (rde-elisp-configuration-service
-      emacs-f-name
-      config
-      `((with-eval-after-load 'gptel
-          (defun rde-gptel-get-api-key ()
-            "Get the API key for gptel."
-            (string-trim-right
-             (with-output-to-string
-               (let ((exit (call-process
-                            ,(if (string-prefix? "pass" (car gptel-api-key))
-                                 (file-append
-                                  (get-value 'password-store config)
-                                  "/bin/" (car gptel-api-key))
-                                 (car gptel-api-key))
-                            nil " *string-output*" nil
-                            ,@(cdr gptel-api-key))))
-                 (or (zerop exit)
-                     (error "Failed to get gptel-api-key with %s"
-                            (with-current-buffer " *string-output*"
-                                                 (buffer-string))))))))
-          (setq gptel-api-key 'rde-gptel-get-api-key)
-          ,@(if (get-value 'emacs-embark config)
-                '((with-eval-after-load 'embark
-                    (keymap-set embark-general-map "?" 'gptel-quick)))
-                '())
-          (setq gptel-default-mode ',default-mode)))
-      #:elisp-packages (list emacs-gptel
-                             emacs-gptel-quick))))
-
-  (feature
-   (name f-name)
-   (values `((,f-name . #t)
-             (emacs-gptel . ,emacs-gptel)))
    (home-services-getter get-home-services)))
 
 (define* (feature-emacs-re-builder
@@ -2667,6 +2615,7 @@ It shows `completion-at-point' candidates in overlay frame."
 (define* (feature-emacs-tempel
           #:key
           (emacs-tempel emacs-tempel)
+          (emacs-tempel-collection emacs-tempel-collection)
           (tempel-capf-hooks '(prog-mode-hook
                                text-mode-hook
                                conf-mode-hook
@@ -2677,6 +2626,7 @@ It shows `completion-at-point' candidates in overlay frame."
   "Configure TempEL for emacs.  To extend a list of templates from other
 features use `home-emacs-tempel-service-type'."
   (ensure-pred file-like? emacs-tempel)
+  (ensure-pred file-like? emacs-tempel-collection)
   (ensure-pred string? tempel-trigger-prefix)
   (ensure-pred list? tempel-capf-hooks)
 
@@ -2719,7 +2669,6 @@ features use `home-emacs-tempel-service-type'."
            (setq-local completion-at-point-functions
                        (cons 'tempel-complete
                              completion-at-point-functions)))
-
          (mapcar
           (lambda (mode)
             (add-hook mode 'rde-tempel-setup-capf))
@@ -2731,7 +2680,10 @@ features use `home-emacs-tempel-service-type'."
         (if after-init-time
              (global-tempel-abbrev-mode 1)
              (add-hook 'after-init-hook 'global-tempel-abbrev-mode)))
-      #:elisp-packages (list emacs-tempel)
+      #:elisp-packages (append (list emacs-tempel)
+                               (if default-templates?
+                                   (list emacs-tempel-collection)
+                                   '()))
       #:summary "\
 Simple templates based on tempo syntax."
       #:commentary "\
@@ -2753,7 +2705,7 @@ just start typing `tempel-trigger-prefix' (default is \"<\") and use
 
 (define* (feature-emacs-monocle
           #:key
-          (olivetti-body-width 85))
+          (olivetti-body-width 'nil))
   "Configure olivetti and helper functions for focused editing/reading."
   (define emacs-f-name 'monocle)
   (define f-name (symbol-append 'emacs- emacs-f-name))
@@ -3210,7 +3162,15 @@ and pair management."
           (require 'smartparens-config)
           (define-key smartparens-mode-map (kbd "M-s") nil)
           (setq sp-highlight-pair-overlay nil)
-          (define-key smartparens-mode-map (kbd "M-S") 'sp-forward-slurp-sexp)))
+          (define-key smartparens-mode-map (kbd "M-S") 'sp-forward-slurp-sexp)
+
+          (keymap-unset smartparens-mode-map "C-<right>")
+          (keymap-unset smartparens-mode-map "M-<right>")
+          (keymap-unset smartparens-mode-map "C-M-<right>")
+
+          (keymap-unset smartparens-mode-map "C-<left>")
+          (keymap-unset smartparens-mode-map "M-<left>")
+          (keymap-unset smartparens-mode-map "C-M-<left>")))
       #:summary "\
 Structured editing and navigation, automatic string escaping and pair management"
       #:commentary "\
@@ -3741,6 +3701,10 @@ and references in your programs."
       config
       `((autoload 'pdf-view-mode "pdf-view" "")
 
+        (with-eval-after-load 'tex
+          (setopt TeX-view-program-selection '((output-pdf "PDF Tools")))
+          (add-hook 'TeX-mode-hook 'TeX-source-correlate-mode))
+
         (defun rde-pdf-tools--list-buffers ()
           "List all currently-opened `pdf-view' mode buffers."
           (cl-remove-if-not
@@ -4000,20 +3964,19 @@ built-in help that provides much more contextual information."
 
   (define (get-home-services config)
     "Return home services related to Info."
-    (define theme (get-value 'emacs-light-theme config))
-    (define emacs-modus-themes (get-value 'emacs-modus-themes config))
+    (define theme (get-value 'emacs-light-theme config #f))
+    (define emacs-modus-themes (get-value 'emacs-modus-themes config #f))
 
     (list
      (rde-elisp-configuration-service
       emacs-f-name
       config
-      `(,@(if emacs-modus-themes
+      `(,@(if (and theme emacs-modus-themes)
               `((eval-when-compile
                  (require 'modus-themes)
                  (require 'cl-seq))
-                (require ',(symbol-append theme '-theme))
                 (eval-when-compile
-                 (enable-theme ',theme))
+                 (load-theme ',theme :no-confirm))
                 (defun rde-info-set-custom-faces ()
                   "Apply more pleasant faces to `Info-mode' and `Info+-mode'."
                   (interactive)
@@ -4548,7 +4511,9 @@ result is longer than LEN."
           (setq org-agenda-custom-commands ,org-agenda-custom-commands)
           (setq org-agenda-tags-column
                 ;; TODO: Name this value better
-                ,(- (get-value 'olivetti-body-width config 85)))
+                ,(if (number? (get-value 'olivetti-body-width config 'nil))
+                     (- (get-value 'olivetti-body-width config 'nil))
+                     ''auto))
           (setq org-agenda-window-setup 'current-window)
           ,@(if org-agenda-files
                 `((setq org-agenda-files ',org-agenda-files))
@@ -5064,7 +5029,8 @@ citar-org-roam-subdir if org-roam is enabled."
    (name f-name)
    (values `((,f-name . #t)
              (bibtex-dialect . ,bibtex-dialect)
-             (global-bibliography . ,global-bibliography)))
+             (global-bibliography . ,global-bibliography)
+             (citar-library-paths . ,citar-library-paths)))
    (home-services-getter get-home-services)))
 
 (define* (feature-emacs-zotra
@@ -6251,7 +6217,9 @@ WTTR-LOCATIONS you will get a weather report based on your IP address."
         (setq display-wttr-locations ',wttr-locations)
         (setq display-wttr-interval ,wttr-interval)
         (autoload 'display-wttr-mode "display-wttr")
-        (display-wttr-mode))
+        (if after-init-time
+            (display-wttr-mode)
+            (add-hook 'after-init-hook 'display-wttr-mode)))
       #:elisp-packages (list emacs-display-wttr))))
 
   (feature
