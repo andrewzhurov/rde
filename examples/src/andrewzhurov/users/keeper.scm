@@ -33,6 +33,7 @@
   #:use-module (rde features presets)
   #:use-module (rde features video)
   #:use-module (rde features version-control)
+  #:use-module (rde features jujutsu)
   #:use-module (rde features terminals)
   #:use-module (rde features rust)
   #:use-module (rde features bun)
@@ -348,6 +349,8 @@
     ;;                            "--disable-renderer-accessibility"))
     ;; (feature-transmission #:auto-start? #f)
     (feature-git #:sign-commits? #f)
+    ;; Jujutsu (jj) + majutsu (Magit-style UI), bound to C-x j.
+    (feature-jujutsu #:sign-commits? #f)
     (feature-additional-services)
     (feature-user-info
      #:user-name "keeper"
