@@ -625,6 +625,27 @@ Org-Roam-UI is meant a successor of org-roam-server that extends functionality o
     (description "Taking interactive notes when watching videos or listening to audios in org-mode.")
     (license license:gpl3+))) ;; GPL 3.0
 
+(define-public emacs-unison-ts-mode
+  (package
+    (name "emacs-unison-ts-mode")
+    (version "0.1.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/fmguerreiro/unison-ts-mode")
+             (commit "f8d291e8be9b2a3259d59e2d469660465a3d5deb")))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "184j5c3c2akqbwxk0j1aql5xyrwr14ml5ilnas65ybi80q9hnplm"))))
+    (build-system emacs-build-system)
+    (home-page "https://github.com/fmguerreiro/unison-ts-mode")
+    (synopsis "Emacs major mode for the Unison language")
+    (description "")
+    (license license:gpl3)))
+
+
+
 (define-public emacs-jdecomp
   (let* ((commit "692866abc83deedce62be8d6040cf24dda7fb7a8"))
     (package
@@ -646,6 +667,117 @@ Org-Roam-UI is meant a successor of org-roam-server that extends functionality o
       (description "")
       (license license:gpl3+)))) ;; no license, actually
 
+(define-public emacs-company-coq-latest
+  (package
+    (name "emacs-company-coq")
+    (version "06-08-2025.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri
+        (git-reference
+         (url "https://github.com/cpitclaudel/company-coq")
+         (commit "78ed04ce39e925232a556d2077718cc7b215469c")))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "02c4771ds6hm6hr12z5pw0lir43gjgba87wzrnda9gh5vbvflyc4"))))
+    (propagated-inputs
+     `(("emacs-company" ,(@ (gnu packages emacs-xyz) emacs-company))
+       ("emacs-company-math" ,(@ (gnu packages emacs-xyz) emacs-company-math))
+       ("emacs-pretty-yasnippet" ,(@ (gnu packages emacs-xyz) emacs-yasnippet))
+       ("emacs-dash" ,(@ (gnu packages emacs-build) emacs-dash))))
+    ;; (inputs
+    ;;  (list (@ (gnu packages base) coreutils)  ;; for `make' for tests
+    ;;        (@ (gnu packages python) python-3.12))
+    ;;  )
+    ;; (inputs
+    ;;  (list emacs-company emacs-company-math emacs-dash emacs-yasnippet))
+    (build-system emacs-build-system)
+    (arguments (list #:tests? #f))      ; no tests
+    (home-page "https://github.com/cpitclaudel/company-coq")
+    (synopsis "Emacs extensions for Proof General's Coq mode")
+    (description "This package includes a collection of Company mode backends
+for Proof-General's Coq mode, and many useful extensions to Proof-General.  It
+features:
+
+@itemize
+@item Prettification of operators, types, and subscripts,
+@item Auto-completion,
+@item Insertion of cases,
+@item Fully explicit intros,
+@item Outlines, code folding, and jumping to definition,
+@item Help with errors,
+@item and more.
+@end itemize")
+    (license license:gpl3+)))
+
+(define-public emacs-gptel
+  (package
+    (name "emacs-gptel")
+    (version "2025")
+    (source
+     (origin
+       (method git-fetch)
+       (uri
+        (git-reference
+         (url "https://github.com/cpitclaudel/company-coq")
+         (commit "78ed04ce39e925232a556d2077718cc7b215469c")))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "02c4771ds6hm6hr12z5pw0lir43gjgba87wzrnda9gh5vbvflyc4"))))
+    (propagated-inputs
+     `(("emacs-company" ,(@ (gnu packages emacs-xyz) emacs-company))
+       ("emacs-company-math" ,(@ (gnu packages emacs-xyz) emacs-company-math))
+       ("emacs-pretty-yasnippet" ,(@ (gnu packages emacs-xyz) emacs-yasnippet))
+       ("emacs-dash" ,(@ (gnu packages emacs-build) emacs-dash))))
+    ;; (inputs
+    ;;  (list (@ (gnu packages base) coreutils)  ;; for `make' for tests
+    ;;        (@ (gnu packages python) python-3.12))
+    ;;  )
+    ;; (inputs
+    ;;  (list emacs-company emacs-company-math emacs-dash emacs-yasnippet))
+    (build-system emacs-build-system)
+    (arguments (list #:tests? #f))      ; no tests
+    (home-page "https://github.com/cpitclaudel/company-coq")
+    (synopsis "Emacs extensions for Proof General's Coq mode")
+    (description "This package includes a collection of Company mode backends
+for Proof-General's Coq mode, and many useful extensions to Proof-General.  It
+features:
+
+@itemize
+@item Prettification of operators, types, and subscripts,
+@item Auto-completion,
+@item Insertion of cases,
+@item Fully explicit intros,
+@item Outlines, code folding, and jumping to definition,
+@item Help with errors,
+@item and more.
+@end itemize")
+    (license license:gpl3+)))
+
+(define-public emacs-tla-tools
+  (let* ((commit-sha "5620e0b166c33a1c5d35279746e14e72a841feab"))
+    (package
+      (name "emacs-tla-tools")
+      (version commit-sha)
+      (source
+       (origin
+         (method git-fetch)
+         (uri
+          (git-reference
+           (url "https://github.com/mrc/tla-tools")
+           (commit commit-sha)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0x1751vxc6p0fq382lc3hnv2y6f1g6an9g6ciib2xsfxgsl02dy1"))))
+      (propagated-inputs
+       `(("emacs-polymode" ,(@ (gnu packages emacs-xyz) emacs-polymode))))
+      (build-system emacs-build-system)
+      (arguments (list #:tests? #t))
+      (home-page "https://github.com/cpitclaudel/company-coq")
+      (synopsis "TLA+ tools for Emacs")
+      (description "")
+      (license license:gpl3+))))
 
 
 (use-modules (ice-9 pretty-print)
@@ -667,15 +799,15 @@ Org-Roam-UI is meant a successor of org-roam-server that extends functionality o
 (define* (record->field+accessor rec)
   (let* ((fields (record-type-fields (struct-vtable rec)))
          (fields+accessors (map (lambda (field)
-                                   `(,field . ,(record-accessor (struct-vtable rec) field)))
-                                 fields)))
+                                  `(,field . ,(record-accessor (struct-vtable rec) field)))
+                                fields)))
     fields+accessors))
 
 (define* (record->alist rec)
   (let* ((field+accessor (record->field+accessor rec))
          (record-alist (map (match-lambda ((field . accessor)
-                                    `(,field . ,(accessor rec))))
-                     field+accessor)))
+                                           `(,field . ,(accessor rec))))
+                            field+accessor)))
     ;; (call-with-output-string (lambda (p) (object->fields rec field+accessor p)))
     record-alist))
 
@@ -686,7 +818,6 @@ Org-Roam-UI is meant a successor of org-roam-server that extends functionality o
 
 '((pprint-record emacs-org-media-note)
   (assoc-ref (record->alist emacs-org-media-note) 'name)
-
 
   (list '(1 . 2))
   (package-name emacs-org-media-note)

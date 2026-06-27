@@ -141,6 +141,7 @@
             feature-emacs-rust
             feature-emacs-org-media-note
             feature-emacs-ccls
+            feature-emacs-coq
             ))
 
 
@@ -2513,6 +2514,8 @@ This configuration packages is not actively maintained right now."
    (values (make-feature-values emacs-mct))
    (home-services-getter get-home-services)))
 
+(let* ((except-in-modes '(org-mode clojure-mode)))
+  (append (map (lambda (mode) '(not mode)) except-in-modes) '(t)))
 
 (define* (feature-emacs-corfu
           #:key
@@ -2550,6 +2553,9 @@ This configuration packages is not actively maintained right now."
          (setq corfu-min-width 60)
          (setq corfu-cycle t)
          (setq corfu-quit-no-match t)
+
+         ;; Note: list needs to end with `t', https://github.com/minad/corfu/pull/379#issuecomment-1756821527
+         (setq global-corfu-modes '((not org-mode) t))
 
          (setq corfu-auto ,(if (and corfu-auto (not corfu-candidate-overlay))
                                't 'nil))
@@ -6367,6 +6373,45 @@ WTTR-LOCATIONS you will get a weather report based on your IP address."
         )
       ;; #:elisp-packages (list emacs-ccls)
       )))
+
+  (feature
+   (name f-name)
+   (values `((,f-name . #t)))
+   (home-services-getter get-home-services)))
+
+(define* (feature-emacs-coq)
+  "Configure emacs-ccls for GNU Emacs."
+
+  (define emacs-f-name 'coq)
+  (define f-name (symbol-append 'emacs- emacs-f-name))
+
+  (define (get-home-services config)
+    (list
+     (simple-service
+      (symbol-append f-name '-add-packages)
+      home-profile-service-type
+      (list (@ (gnu packages coq) coq)))
+
+     (rde-elisp-configuration-service
+      emacs-f-name
+      config
+      `(
+        ;; company-coq
+        ;; Load company-coq when opening Coq files
+        (with-eval-after-load 'company-coq
+          (add-hook 'coq-mode-hook #'company-coq-mode)
+          (setq company-coq-features/prettify-symbols-in-terminals t))
+        )
+      #:elisp-packages (list (@ (gnu packages coq) proof-general)
+                             (@ (rde packages emacs-xyz) emacs-company-coq-latest)
+                             ;; for emacs-company-coq-latest
+                             ;; Both using propagated inputs and these explicit ones VV
+                             ;; display these packages as "Not available" on M-x describe-package company-coq RET
+                             (@ (gnu packages emacs-xyz) emacs-company)
+                             (@ (gnu packages emacs-xyz) emacs-company-math)
+                             (@ (gnu packages emacs-xyz) emacs-yasnippet)
+                             (@ (gnu packages emacs-build) emacs-dash)
+                             ))))
 
   (feature
    (name f-name)
