@@ -131,7 +131,8 @@
     #:extra-init-el `((load ,(local-file "./tmp.el"))))
 
    (feature-emacs-appearance)
-   (feature-emacs-modus-themes)
+   (feature-emacs-modus-themes
+    #:deuteranopia? #f)
    ;; Adds 0.15s load time and blinking
    ;; (feature-emacs-dashboard)
 

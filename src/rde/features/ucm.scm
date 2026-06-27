@@ -1,7 +1,7 @@
 (define-module (rde features ucm)
   #:export (feature-ucm))
 
-(define* (feature-ucm) ;; based on feature-emacs-org-roam-ui
+(define* (feature-ucm)
   "Configure Unisonweb Code Manager."
 
   (define f-name 'ucm)

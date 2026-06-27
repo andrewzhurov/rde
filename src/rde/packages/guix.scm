@@ -115,6 +115,7 @@
               (for-each (lambda (f)
                           (false-if-exception (make-file-writable f)))
                         (find-files ".")))))))
+    (native-inputs (list guile-3.0))
     (inputs `(("guix" ,(make-guix-package channels))))
     (home-page "https://git.sr.ht/~abcdw/rde")
     (synopsis "Combined package for channel source and bytecode files")
