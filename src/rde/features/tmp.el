@@ -298,3 +298,47 @@ Try to visit the target file for a richer summary line."
           (setf (gethash to-file-name eglot--servers-by-xrefed-file)
                 from-server)))
     (xref-make-match summary (xref-make-file-location file line column) length)))
+
+(defun my/dark-theme-dividers ()
+  (interactive)
+
+  ;; Slim divider
+  (setq window-divider-default-right-width 3
+        window-divider-default-bottom-width 3)
+
+  (window-divider-mode 1)
+
+  (set-face-attribute 'header-line nil
+                      :foreground "white"
+                      :background "dim gray"
+                      :box "black")
+
+  ;; Dim gray divider
+  (dolist (face '(vertical-border
+                  window-divider
+                  window-divider-first-pixel
+                  window-divider-last-pixel))
+    (set-face-attribute face nil
+                        :foreground "dim gray"
+                        :background "dim gray"))
+
+  ;; Disable classic borders
+  (set-face-attribute 'vertical-border nil
+                      :foreground (face-background 'default)))
+
+(defun my/modus-dark-theme-dividers ()
+  (interactive)
+  (when (eq (car custom-enabled-themes)
+            'modus-vivendi)
+
+    (my/dark-theme-dividers)))
+
+(add-hook 'modus-themes-after-load-theme-hook
+          #'my/dark-theme-dividers)
+
+;; For dired buffers to pick up .dir-local.el
+;; (so org-roam does not re-build global DB when opening project which uses local DB)
+(add-hook 'dired-mode-hook #'hack-dir-local-variables-non-file-buffer)
+
+;; run-time editable extra init scripts
+(load "~/gits/rde/src/rde/features/extra-init.el")
