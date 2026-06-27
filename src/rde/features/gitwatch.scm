@@ -1,6 +1,6 @@
 (define-module (rde features gitwatch)
   #:use-module (rde features)
-  #:use-module (rde features predicates)
+  #:use-module (rde predicates)
   #:use-module (rde packages gitwatch)
 
   #:use-module (gnu services)

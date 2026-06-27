@@ -22,7 +22,7 @@
   #:use-module (rde features)
   #:use-module (rde features emacs)
   #:use-module (rde predicates)
-  #:use-module (rde features predicates)
+  #:use-module (rde predicates)
   #:use-module (rde packages clojure)
   #:use-module (gnu services)
   #:use-module (gnu home services)

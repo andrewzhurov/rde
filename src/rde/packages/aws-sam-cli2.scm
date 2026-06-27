@@ -38,7 +38,7 @@
   #:use-module (gnu packages cpp)
   #:use-module (gnu packages cpio)
   #:use-module (gnu packages cran)
-  #:use-module (gnu packages crates-io)
+  #:use-module (gnu packages rust-crates)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages databases)

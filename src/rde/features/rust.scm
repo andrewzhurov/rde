@@ -1,7 +1,7 @@
 (define-module (rde features rust)
   #:use-module (rde features)
   #:use-module (rde features emacs)
-  #:use-module (rde features predicates)
+  #:use-module (rde predicates)
 
   #:use-module (rde packages)
   #:use-module (rde packages rust)
@@ -9,7 +9,7 @@
 
   #:use-module (gnu packages base)
   #:use-module (gnu packages emacs-xyz)
-  #:use-module (gnu packages crates-io)
+  #:use-module (gnu packages rust-crates)
   #:use-module (gnu packages commencement)
   #:use-module (gnu packages graphviz)
 
@@ -216,6 +216,7 @@
    (name 'rust)
    (values `((rust . #t)))
    (home-services-getter get-home-services)))
+
 
 (define* (feature-rust-foreign)
   "Setup and configure environment for Rust."

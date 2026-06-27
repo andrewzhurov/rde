@@ -1,6 +1,6 @@
 (define-module (rde features hypothesis)
   #:use-module (rde features)
-  #:use-module (rde features predicates)
+  #:use-module (rde predicates)
   #:use-module (rde packages)
 
   #:use-module (gnu services)
