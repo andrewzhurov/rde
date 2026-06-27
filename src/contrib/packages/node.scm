@@ -28,6 +28,7 @@
   #:use-module (gnu packages compression)
   #:use-module (gnu packages check)
   #:use-module (gnu packages icu4c)
+  #:use-module (gnu packages gcc)
   #:use-module (gnu packages jemalloc)
   #:use-module (gnu packages libevent)
   #:use-module (gnu packages linux)
@@ -124,6 +125,19 @@
 source files.")
     (license license:expat)))
 
+(use-modules (gnu packages python))
+(use-modules (guix store))
+(use-modules (guix packages))
+(use-modules (guix utils))
+
+(define-public python-3.10-fixed
+  (package
+    (inherit python-3.10) ;; 3.10 build fails on xml test for me
+    (arguments
+     (substitute-keyword-arguments (package-arguments python-3.10)
+       ((#:make-flags flags)
+        #~(list (string-append (car #$flags) " test_xml_etree" " test_xml_etree_c")))))))
+
 (define-public node-stable
   (package
     (inherit node)
@@ -160,7 +174,7 @@ source files.")
                "--shared-openssl"
                "--shared-zlib"
                "--shared-brotli"
-               "--with-intl=system-icu"))
+               "--without-intl"))
            ((#:phases phases)
             `(modify-phases ,phases
                (replace 'set-bootstrap-host-rpath
@@ -258,27 +272,37 @@ source files.")
                                 "deps/llhttp/include/llhttp.h")))))))))
     (native-inputs
      (list ;; Runtime dependencies for binaries used as a bootstrap.
-      c-ares
+      c-ares-for-node-lts
       brotli
-      icu4c
+      icu4c-76
       libuv-for-node
       `(,nghttp2 "lib")
       openssl-1.1
       zlib
       ;; Regular build-time dependencies.
+      gcc-11 ;; fixes build; stole it from node-lts which uses it for the same reason
       perl
       pkg-config
       procps
-      python-3.10
+      python-3.10-fixed
       util-linux))
     (inputs
      (list bash-minimal
            coreutils
-           c-ares
-           icu4c
-           libuv-for-node
+           c-ares-for-node-lts
+           icu4c-76
+           libuv-for-node ;; libuv-for-node-lts
            llhttp-bootstrap-2.1.4
            brotli
            `(,nghttp2 "lib")
-           openssl-1.1
+           openssl-1.1 ;; openssl
            zlib))))
+
+(use-modules (rde comment))
+(comment
+ (use-modules (guix store))
+ (use-modules (guix packages))
+ (use-modules (guix utils))
+
+ (parameterize ((%daemon-socket-uri "file:///var/guix/daemon-socket/socket"))
+   (build-with-store node-stable)))
