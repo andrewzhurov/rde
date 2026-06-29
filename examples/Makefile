@@ -7,6 +7,12 @@ GUIXTM_LATEST_GUIX=guix time-machine -L ./env/guix -C ${CHANNELS_FILE_LATEST_GUI
 
 GUIX=$(GUIXTM) --
 
+# Local rde module dirs, passed to `guix home/system` subcommands so that
+# our local edits to (rde ...) modules override the rde channel's compiled
+# copies.  GUILE_LOAD_PATH alone is not enough: the channel ships
+# precompiled .go files that shadow the source found via GUILE_LOAD_PATH.
+RDE_LOAD_PATH=-L ../src -L ../tests
+
 SRC_DIR=./src
 CONFIGS=${SRC_DIR}/andrewzhurov/configs.scm
 # https://ci.guix.gnu.org
@@ -77,11 +83,11 @@ haus/system/reconfigure: auth-nonguix guix
 
 keeper/home/build: guix
 	RDE_TARGET=keeper-home ${GUIX} home \
-	build ${CONFIGS}
+	build ${RDE_LOAD_PATH} ${CONFIGS}
 
 keeper/home/reconfigure: guix
 	RDE_TARGET=keeper-home ${GUIX} home \
-	reconfigure ${CONFIGS} --allow-downgrades ${SUBSTITUTE_URLS}
+	reconfigure ${RDE_LOAD_PATH} ${CONFIGS} --allow-downgrades ${SUBSTITUTE_URLS}
 
 cow-store:
 	sudo herd start cow-store ${ROOT_MOUNT_POINT}

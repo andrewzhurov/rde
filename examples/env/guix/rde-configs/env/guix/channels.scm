@@ -30,11 +30,13 @@
     (name 'nonguix)
     (url "https://gitlab.com/nonguix/nonguix")
     (commit
-     ;; "3c61d24b8818de45738ffe358e8b40d705cb3a6d" ;; before adding linux-libre-6.17
+     ;; Bumped to match guix 0ce84291 (2026-05-03): older nonguix pins
+     ;; reference linux-libre-6.16 which the new guix no longer provides.
+     "5f2630e69fbbe9e79c350a67545f0fef7e93e223" ;; CommitDate: 2026-05-02
+     ;; ----- older pins kept for reference -----
+     ;; "25d7a8091c2c9678a8694f073d846a7001165169" ;; before ffmpeg-6, CommitDate: Tue Sep 23 22:45:08 2025 +0200
      ;; "705333bf29dd5ed80044362d060fabd539271dc7" ;; python-3.11/fixed removed, CommitDate: Wed Dec 17 14:44:42 2025 -0500
-     ;; "3f4a1907cae9b0def09d1549c491bb4e307b9097" ;; before adding python-3.11/fixed, (linux-libre-6.16), CommitDate: Wed Oct 8 10:39:25 2025 +0200
-     "25d7a8091c2c9678a8694f073d846a7001165169" ;; before ffmpeg-6, CommitDate: Tue Sep 23 22:45:08 2025 +0200
-     ;;"d741f41eca0a04694775118eedaa332ffa1a26f8"   ;; 5 Dec 2025
+     ;; "3f4a1907cae9b0def09d1549c491bb4e307b9097" ;; (linux-libre-6.16), CommitDate: Wed Oct 8 10:39:25 2025 +0200
      )
     ;; Enable signature verification:
     (introduction
