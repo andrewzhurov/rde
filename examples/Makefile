@@ -7,30 +7,29 @@ GUIX=$(GUIXTM) --
 
 SRC_DIR=./src
 CONFIGS=${SRC_DIR}/andrewzhurov/configs.scm
+# https://ci.guix.gnu.org
+SUBSTITUTE_URLS=--substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.trop.in'
 PULL_EXTRA_OPTIONS=--allow-downgrades --url="https://codeberg.org/guix/guix-mirror.git" --disable-authentication --substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.trop.in'
 
 ROOT_MOUNT_POINT=/mnt
 
 VERSION=latest
 
-
-repl: ares
 auth-nonguix:
 	sudo guix archive --authorize < ./src/andrewzhurov/files/keys/nonguix-key.pub
-
-guix-sh:
-	${GUIX}
-
-guile-repl:
-	${GUIX} environment --ad-hoc guile -- ./pre-inst-env guile \
-	-L ../tests -L ../files/emacs/gider/src -L ../src -L ~/gits/guix/guix --listen=37146
 
 repl: ares
 	${GUIX} repl \
 	-L ../files/emacs/gider/src --listen=tcp:37146
 
+g:
+	${GUIX} shell -L ./env/guix -L ./env/dev guile guile-ares-rs ${SUBSTITUTE_URLS} \
+	-e '(@ (rde-configs env dev packages) guix-package)' \
+	-e '(@ (rde-configs env dev packages) channels-package)' \
+	-- guile
+
 ares: env/sync
-	${GUIX} shell -L ./env/guix -L ./env/dev guile guile-ares-rs --substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.gnu.org https://ci.guix.trop.in' \
+	${GUIX} shell -L ./env/guix -L ./env/dev guile guile-ares-rs ${SUBSTITUTE_URLS} \
 	-e '(@ (rde-configs env dev packages) guix-package)' \
 	-e '(@ (rde-configs env dev packages) channels-package)' \
 	-- guile \
@@ -42,9 +41,11 @@ ares: env/sync
 
 env/guix/rde/env/guix/channels.scm: ../env/guix/rde/env/guix/channels.scm
 	mkdir -p $(@D)
-	cat $< > $@
-	echo -e "\n;;; This is an automatic copy of RDE's channels.scm" >> $@
-	echo -e ";;; Do not edit it manually" >> $@
+	chmod +w $@ | true # allow write for override
+	echo -e ";;; This is an automatic copy of RDE's channels.scm" > $@
+	echo -e ";;; Do not edit it manually\n" >> $@
+	cat $< >> $@
+	chmod -w $@ # disallow write so we don't accidentally write to it
 
 env/sync: env/guix/rde/env/guix/channels.scm
 guix: env/sync
@@ -72,9 +73,13 @@ haus/system/reconfigure: auth-nonguix guix
 	sudo RDE_TARGET=haus-system ${GUIX} system \
 	reconfigure ${CONFIGS} --allow-downgrades --substitute-urls='https://substitutes.nonguix.org https://bordeaux.guix.gnu.org https://ci.guix.trop.in' # https://ci.guix.gnu.org
 
+keeper/home/build: guix
+	RDE_TARGET=keeper-home ${GUIX} home \
+	build ${CONFIGS}
+
 keeper/home/reconfigure: guix
 	RDE_TARGET=keeper-home ${GUIX} home \
-	reconfigure ${CONFIGS} --allow-downgrades --substitute-urls='https://bordeaux.guix.gnu.org' #    https://ci.guix.gnu.org
+	reconfigure ${CONFIGS} --allow-downgrades ${SUBSTITUTE_URLS}
 
 cow-store:
 	sudo herd start cow-store ${ROOT_MOUNT_POINT}
