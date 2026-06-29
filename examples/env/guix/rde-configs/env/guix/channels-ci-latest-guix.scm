@@ -20,7 +20,9 @@
        "2841 9AC6 5038 7440 C7E9  2FFA 2208 D209 58C1 DEB0"))))
    (channel
     (name 'guix)
-    (url "https://git.guix.gnu.org/guix.git")
+    ;; codeberg: git.guix.gnu.org redirects there and libgit2 refuses
+    ;; cross-host redirects.
+    (url "https://codeberg.org/guix/guix.git")
     (branch "master")
     (introduction
      (make-channel-introduction

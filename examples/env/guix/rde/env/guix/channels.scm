@@ -14,16 +14,17 @@
 (define core-channels
   (list (channel
          (name 'guix)
-         (url "https://git.guix.gnu.org/guix.git")
+         ;; Use codeberg directly: git.guix.gnu.org now 302-redirects to
+         ;; codeberg, and guile-git's libgit2 refuses cross-host redirects.
+         (url "https://codeberg.org/guix/guix.git")
          (branch "master")
          (commit
-          ;; "0ce84291efb22a0f7b73a9099b4d2bfde267e352"    ;; abcdw/master 2026-05-04
-          ;; "df3d4db1f76c03855d92f7de96bac5f36e338e1c"    ;; updated tdlib,           CommitDate: Tue Dec 2 18:04:29 2025 +0100
-          ;; "02114e6e983751ce6156a4d09beb50142109a030"    ;; moved tdlb,              CommitDate: Wed Oct 22 19:37:56 2025 +0200
-          ;; "2f12efaf3994edc23be816bb49dd2a349ca99ac9" ;; before moved tdlib,      CommitDate: Wed Oct 22 19:37:48 2025 +0200
-          ;; "0c3462568b718bb0ec6df9562adc5ebc8d49e885" ;; added 7zip,              CommitDate: Wed Oct 22 16:43:05 2025 +0200
+          ;; rde-tested guix (came in via abcdw/master 2026-05-04 merge).
+          "0ce84291efb22a0f7b73a9099b4d2bfde267e352" ;; abcdw/master 2026-05-04
+          ;; ----- older pins kept for reference -----
+          ;; "92c63391ee25205be3b8525d5d1fe5b9f345f37f" ;; original,                CommitDate: Mon Sep 8  20:32:51 2025 +0800
+          ;; "df3d4db1f76c03855d92f7de96bac5f36e338e1c" ;; updated tdlib,           CommitDate: Tue Dec 2 18:04:29 2025 +0100
           ;; "a2590694ae0350f9d7400f6f6f41fdbac2fa5340" ;; added python-3.11/fixed, CommitDate: Wed Oct 15 22:03:05 2025 +0200
-          "92c63391ee25205be3b8525d5d1fe5b9f345f37f" ;; original,                CommitDate: Mon Sep 8  20:32:51 2025 +0800
           )
          (introduction
           (make-channel-introduction

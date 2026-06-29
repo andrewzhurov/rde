@@ -11,11 +11,13 @@
 (define core-channels
   (list (channel
          (name 'guix)
-         (url "https://git.guix.gnu.org/guix.git")
+         ;; codeberg: git.guix.gnu.org redirects there and libgit2 refuses
+         ;; cross-host redirects.
+         (url "https://codeberg.org/guix/guix.git")
          (branch "master")
          (commit
-          ;; "df3d4db1f76c03855d92f7de96bac5f36e338e1c"
-          "4b9d14378fcc3d8dd4eea36b541fe87e198fd7b8" ;; original
+          "0ce84291efb22a0f7b73a9099b4d2bfde267e352" ;; rde-tested 2026-05-04
+          ;; "4b9d14378fcc3d8dd4eea36b541fe87e198fd7b8" ;; original
           )
          (introduction
           (make-channel-introduction
