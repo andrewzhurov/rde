@@ -366,7 +366,11 @@ different level headings will have different size."
         (defun rde-modus-themes-set-custom-faces (&optional _theme)
           "Set faces based on the current theme."
           (interactive)
-          (when (modus-themes-get-current-theme)
+          ;; This runs from the `enable-theme' advice, which also fires for
+          ;; non-modus themes (e.g. fontaine) before `modus-themes' is
+          ;; loaded, so guard against the function being unbound.
+          (when (and (fboundp 'modus-themes-get-current-theme)
+                     (modus-themes-get-current-theme))
             (modus-themes-with-colors
               (custom-set-faces
                `(window-divider ((,c :foreground ,bg-main)))
@@ -398,13 +402,14 @@ different level headings will have different size."
 
         (defun rde-modus-themes--dark-theme-p (&optional theme)
           "Indicate if there is a curently-active dark THEME."
-          (let ((th (or theme (modus-themes-get-current-theme))))
-            (if (member
-                 th
-                 (modus-themes-filter-by-background-mode
-                  (modus-themes-get-themes) 'dark))
-                t
-                nil)))
+          (when (fboundp 'modus-themes-get-current-theme)
+            (let ((th (or theme (modus-themes-get-current-theme))))
+              (if (member
+                   th
+                   (modus-themes-filter-by-background-mode
+                    (modus-themes-get-themes) 'dark))
+                  t
+                  nil))))
 
         (setq rde-modus-themes-header-line-padding ,header-line-padding)
         (setq rde-modus-themes-tab-bar-padding ,tab-bar-padding)
