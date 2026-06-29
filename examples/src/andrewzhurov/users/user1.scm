@@ -42,7 +42,6 @@
   #:use-module (rde home services wm)
   #:use-module (rde home services video)
   #:use-module (rde packages aspell)
-  #:use-module (rde packages package-management)
   #:use-module (rde packages)
 
   #:use-module (rde features gitwatch)

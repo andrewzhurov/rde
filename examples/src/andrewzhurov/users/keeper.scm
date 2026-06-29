@@ -5,9 +5,9 @@
   #:use-module (gnu home services xdg)
   #:use-module (gnu home services)
   #:use-module (gnu home-services ssh)
-  #:use-module (gnu packages)
   #:use-module (gnu packages node)
   #:use-module (gnu packages linux)
+  #:use-module (gnu packages coq)
   #:use-module (gnu services)
   #:use-module (guix channels)
   #:use-module (guix download)
@@ -35,27 +35,28 @@
   #:use-module (rde features version-control)
   #:use-module (rde features terminals)
   #:use-module (rde features rust)
+  #:use-module (rde features bun)
+  #:use-module (rde features ai)
+  #:use-module (rde features guile)
   #:use-module (rde features arei)
   #:use-module (rde features web-browsers)
   #:use-module (rde features bittorrent)
   #:use-module (rde features fontutils)
+  #:use-module (rde features syncthing)
   #:use-module (rde features)
   #:use-module (rde home services emacs)
   #:use-module (rde home services i2p)
   #:use-module (rde home services wm)
   #:use-module (rde home services video)
   #:use-module (rde packages aspell)
-  #:use-module (rde packages package-management)
-  #:use-module (rde packages)
-
   #:use-module (rde features gitwatch)
   #:use-module (rde features org-paste-inline-image)
   #:use-module (rde features wm)
   #:use-module (rde packages clj-kondo)
+  #:use-module (rde packages emacs-xyz)
 
   #:use-module (nongnu packages linux)
   #:use-module (nongnu system linux-initrd)
-
 
   #:use-module (srfi srfi-1))
 
@@ -140,38 +141,40 @@
        ;; (@ (rde packages emacs-xyz) emacs-eglot-1.17)
        ;; (@ (rde packages emacs-xyz) emacs-combobulate)
        (@ (rde packages emacs-xyz) emacs-jdecomp)
+       ;; (@ (rde packages emacs-xyz) emacs-unison-ts-mode)
+       ;; (@ (rde packages emacs-xyz) emacs-tla-tools)
        )
-      (strings->packages
+      (list
        ;; "emacs-dirvish"
-       "emacs-piem"
+       (@ (gnu packages emacs-xyz) emacs-piem)
        ;; "emacs-company"
-       "emacs-ox-haunt"
-       "emacs-haskell-mode"
-       "emacs-rainbow-mode"
-       "emacs-hl-todo"
-       "emacs-yasnippet"
+       (@ (gnu packages emacs-xyz) emacs-ox-haunt)
+       (@ (gnu packages emacs-xyz) emacs-haskell-mode)
+       (@ (gnu packages emacs-xyz) emacs-rainbow-mode)
+       (@ (gnu packages emacs-xyz) emacs-hl-todo)
+       (@ (gnu packages emacs-xyz) emacs-yasnippet)
        ;; "emacs-company"
        ;; "emacs-consult-dir"
        ;; "emacs-all-the-icons-completion" "emacs-all-the-icons-dired"
-       "emacs-kind-icon"
-       "emacs-nginx-mode" "emacs-yaml-mode"
+       (@ (gnu packages emacs-xyz) emacs-kind-icon)
+       (@ (gnu packages emacs-xyz) emacs-nginx-mode)
+       (@ (gnu packages emacs-xyz) emacs-yaml-mode)
        ;; "emacs-lispy"
-       "emacs-ytdl"
-       "emacs-multitran"
-       "emacs-minimap"
-       "emacs-ement"
-       "emacs-restart-emacs"
-       "emacs-org-present"
+       (@ (gnu packages emacs-xyz) emacs-ytdl)
+       (@ (gnu packages emacs-xyz) emacs-multitran)
+       (@ (gnu packages emacs-xyz) emacs-minimap)
+       (@ (gnu packages emacs-xyz) emacs-ement)
+       (@ (gnu packages emacs-xyz) emacs-restart-emacs)
+       (@ (gnu packages emacs-xyz) emacs-org-present)
 
        ;; andrewzhurov's stuff below
-       "emacs-minimap"
-       "emacs-paredit"
-       "emacs-dired-hacks"
-       "emacs-aggressive-indent"
-       "emacs-typescript-mode"
+       (@ (gnu packages emacs-xyz) emacs-paredit)
+       (@ (gnu packages emacs-xyz) emacs-dired-hacks)
+       (@ (gnu packages emacs-xyz) emacs-aggressive-indent)
+       (@ (gnu packages emacs-xyz) emacs-typescript-mode)
        ;; "emacs-tide"
-       "emacs-crux"
-       "emacs-glsl-mode"
+       (@ (gnu packages emacs-xyz) emacs-crux)
+       (@ (gnu packages emacs-xyz) emacs-glsl-mode)
        ))))))
 
 
@@ -184,32 +187,39 @@
      (@ (gnu packages tree-sitter) tree-sitter-clojure)
      (@ (gnu packages tree-sitter) tree-sitter-html)
      (@ (rde packages clj-kondo) clj-kondo)
+
+     (@ (gnu packages emacs-xyz) emacs-company-math)
+     (@ (gnu packages emacs-xyz) emacs-yasnippet)
+     (@ (gnu packages emacs-build) emacs-dash)
+
      ;; guix-from-channels-lock ;; perhaps this will spare guix deps on `guix gc`, may override `guix` binary, so guix pull will be in vain
      ;; realtek-firmware ;; for wifi, I suppose
      ;; atheros-firmware ;; mayb for wifi
      ;; iwlwifi-firmware ;; mayb for wifi
      )
-    (strings->packages
+    (list
      ;; "calibre"
 
      ;; "imagemagick"
      ;; "obs" "obs-wlrobs"
      ;; "binutils" "make"
 
-     "hicolor-icon-theme" "adwaita-icon-theme" "gnome-themes-extra"
-     "papirus-icon-theme" ; 85k files
-     "arc-theme"
+     (@ (gnu packages gnome) hicolor-icon-theme)
+     (@ (gnu packages gnome) adwaita-icon-theme)
+     (@ (gnu packages gnome) gnome-themes-extra)
+     (@ (gnu packages gnome-xyz) papirus-icon-theme) ; 85k files
+     (@ (gnu packages gnome-xyz) arc-theme)
      ;; "thunar" "fd"
 
      ;; "libreoffice"
      ;; "ffmpeg"
-     "ripgrep"
+     (@ (gnu packages rust-apps) ripgrep)
      ;; "curl"
 
      ;; Andrew Zhurov's stuff below
      ;; clojure-related stuff
      ;; "clojure" ;; already in feature
-     "rlwrap" ;; mayb required by clojure cli
+     (@ (gnu packages readline) rlwrap) ;; mayb required by clojure cli
      ;; "node" ;; mayb required for shadow-cljs
      ;; "supercollider" ;; does it work?
      ;; "leiningen" ;; does it work?
@@ -242,7 +252,7 @@
      ;; "nmtui" ;; is not a package, seems to come included with guix profile; or mayb comes from 'network-manager'; for network (wifi incl.) management
 
      ;; "awscli"
-     "p7zip"
+     (@ (gnu packages compression) p7zip)
 
      ;; "libopenshot" ;; build error
      ;; "pitivi" ;; build error
@@ -252,7 +262,7 @@
 
      ;; "nix"
 
-     "git-lfs"
+     (@ (gnu packages version-control) git-lfs)
      ))))
 
 
@@ -323,6 +333,7 @@
                 git)))
            %all-features)
    (list
+    (feature-shepherd)
     (feature-foreign-distro)
     (feature-fonts)
     (feature-mpv)
@@ -384,7 +395,7 @@
     ;; https://plaindrops.de/blog/2020/GTDorgmode/
     ;; https://www.labri.fr/perso/nrougier/GTD/index.html#org2d62325
     (feature-emacs-org
-     #:org-directory "/home/keeper/notes/org-roam"
+     #:org-directory "/home/keeper/notes/sandbox"
      #:org-indent? #t
      #:org-capture-templates
      ;; https://libreddit.tiekoetter.com/r/orgmode/comments/gc76l3/org_capture_inside_notmuch/
@@ -397,10 +408,10 @@
         (file+headline "~/work/abcdw/private/phd.org" "Tasks")
         "* TODO %?\nSCHEDULED: %t\n%a\n")))
     (feature-emacs-org-roam
-     #:org-roam-directory "/home/keeper/notes/org-roam")
+     #:org-roam-directory "/home/keeper/notes/sandbox")
     (feature-emacs-org-agenda
-     #:org-agenda-files '("/home/keeper/notes/org-roam"
-                          "/home/keeper/notes/org-roam/daily"))
+     #:org-agenda-files '("/home/keeper/notes/sandbox"
+                          "/home/keeper/notes/sandbox/daily"))
 
     ;; (feature-emacs-elfeed
     ;;  #:elfeed-org-files '("/data/abcdw/work/abcdw/private/rss.org"))
@@ -423,11 +434,17 @@
     ;; (feature-jdecomp)
    (feature-emacs-ccls)
    (feature-priority-bin)
+   ;; (feature-syncthing)
+   (feature-emacs-coq)
+   (feature-ai #:aiml-api-key (@ (andrewzhurov secret) aiml-api-key)
+               #:sambanova-api-key (@ (andrewzhurov secret) sambanova-api-key)
+               #:deepseek-api-key (@ (andrewzhurov secret) deepseek-api-key))
+   (feature-bun)
 
-    (feature-keyboard
-     ;; To get all available options, layouts and variants run:
-     ;; cat `guix build xkeyboard-config`/share/X11/xkb/rules/evdev.lst
-     #:keyboard-layout
-     (keyboard-layout
-      "us,ru" "dvorak,"
-      #:options '("grp:shifts_toggle" "ctrl:nocaps"))))))
+   (feature-keyboard
+    ;; To get all available options, layouts and variants run:
+    ;; cat `guix build xkeyboard-config`/share/X11/xkb/rules/evdev.lst
+    #:keyboard-layout
+    (keyboard-layout
+     "us,ru" "dvorak,"
+     #:options '("grp:shifts_toggle" "ctrl:nocaps"))))))
