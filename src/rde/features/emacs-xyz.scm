@@ -1,6 +1,6 @@
 ;;; rde --- Reproducible development environment.
 ;;;
-;;; Copyright © 2022, 2023, 2024, 2025 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2022-2026 Andrew Tropin <andrew@trop.in>
 ;;; Copyright © 2022 Samuel Culpepper <samuel@samuelculpepper.com>
 ;;; Copyright © 2022 Demis Balbach <db@minikn.xyz>
 ;;; Copyright © 2022-2025 Nicolas Graves <ngraves@ngraves.fr>
@@ -82,6 +82,7 @@
             feature-emacs-mct
             feature-emacs-corfu
             feature-emacs-tempel
+            feature-emacs-completion-preview
 
             ;; Focus
             feature-emacs-monocle
@@ -293,6 +294,7 @@ Almost all visual elements are disabled.")))
 (define* (feature-emacs-modus-themes
           #:key
           (emacs-modus-themes emacs-modus-themes)
+          (emacs-ef-themes emacs-ef-themes)
           (extra-after-enable-theme-hooks '())
           (dark? #f)
           (deuteranopia? #t)
@@ -301,15 +303,20 @@ Almost all visual elements are disabled.")))
           (extra-modus-themes-overrides '()))
   "Configure modus-themes, a set of elegant and highly accessible
 themes for Emacs.  DEUTERANOPIA? replaces red/green tones with yellow/blue,
-which helps people with color blindness.  If DEUTERANOPIA-RED-BLUE-DIFFS?  is
-set, red/blue colors will be used instead.  If HEADINGS-SCALING? is set,
+which helps people with color blindness.  If HEADINGS-SCALING? is set,
 different level headings will have different size."
   (ensure-pred file-like? emacs-modus-themes)
+  (ensure-pred file-like? emacs-ef-themes)
   (ensure-pred list? extra-after-enable-theme-hooks)
   (ensure-pred boolean? dark?)
   (ensure-pred boolean? deuteranopia?)
   (ensure-pred boolean? headings-scaling?)
   (ensure-pred elisp-config? extra-modus-themes-overrides)
+
+  (when deuteranopia-red-blue-diffs?
+    (warning
+     (G_ "'~a' in feature-emacs-modus-themes is deprecated and ignored~%")
+     'deuteranopia-red-blue-diffs?))
 
   (define emacs-f-name 'modus-themes)
   (define f-name (symbol-append 'emacs- emacs-f-name))
@@ -330,11 +337,8 @@ different level headings will have different size."
      (rde-elisp-configuration-service
       emacs-f-name
       config
-      `((eval-when-compile
-          (require 'modus-themes)
-          (require 'cl-seq))
-        (eval-when-compile
-         (load-theme ',theme :no-confirm))
+      `((autoload 'modus-themes-with-colors "modus-themes" nil nil 'macro)
+
         (defgroup rde-modus-themes nil
           "Configuration related to `modus-themes'."
           :group 'rde)
@@ -362,7 +366,7 @@ different level headings will have different size."
         (defun rde-modus-themes-set-custom-faces (&optional _theme)
           "Set faces based on the current theme."
           (interactive)
-          (when (modus-themes--current-theme)
+          (when (modus-themes-get-current-theme)
             (modus-themes-with-colors
               (custom-set-faces
                `(window-divider ((,c :foreground ,bg-main)))
@@ -394,9 +398,13 @@ different level headings will have different size."
 
         (defun rde-modus-themes--dark-theme-p (&optional theme)
           "Indicate if there is a curently-active dark THEME."
-          (if theme
-              (eq theme ',light-theme)
-              (eq (car custom-enabled-themes) ',dark-theme)))
+          (let ((th (or theme (modus-themes-get-current-theme))))
+            (if (member
+                 th
+                 (modus-themes-filter-by-background-mode
+                  (modus-themes-get-themes) 'dark))
+                t
+                nil)))
 
         (setq rde-modus-themes-header-line-padding ,header-line-padding)
         (setq rde-modus-themes-tab-bar-padding ,tab-bar-padding)
@@ -405,7 +413,9 @@ different level headings will have different size."
                     :after 'rde-modus-themes-run-after-enable-theme-hook)
         ,@(map (lambda (hook)
                  `(add-hook 'rde-modus-themes-after-enable-theme-hook ',hook))
-               extra-after-enable-theme-hooks)
+               (append
+                '(rde-modus-themes-set-custom-faces)
+                extra-after-enable-theme-hooks))
 
         (with-eval-after-load 'rde-keymaps
           (define-key rde-toggle-map (kbd "t") 'modus-themes-toggle))
@@ -422,37 +432,7 @@ different level headings will have different size."
                   (bg-region bg-ochre)
                   (fg-region unspecified)
                   ,@extra-modus-themes-overrides))
-          ,@(if deuteranopia-red-blue-diffs?
-                `((setq modus-operandi-deuteranopia-palette-overrides
-                        '((bg-changed         "#ffdfa9")
-                          (bg-changed-faint   "#ffefbf")
-                          (bg-changed-refine  "#fac090")
-                          (bg-changed-fringe  "#d7c20a")
-                          (fg-changed         "#553d00")
-                          (fg-changed-intense "#655000")
 
-                          (bg-removed         "#ffd8d5")
-                          (bg-removed-faint   "#ffe9e9")
-                          (bg-removed-refine  "#f3b5af")
-                          (bg-removed-fringe  "#d84a4f")
-                          (fg-removed         "#8f1313")
-                          (fg-removed-intense "#aa2222")))
-
-                  (setq modus-vivendi-deuteranopia-palette-overrides
-                        '((bg-changed         "#363300")
-                          (bg-changed-faint   "#2a1f00")
-                          (bg-changed-refine  "#4a4a00")
-                          (bg-changed-fringe  "#8a7a00")
-                          (fg-changed         "#efef80")
-                          (fg-changed-intense "#c0b05f")
-
-                          (bg-removed         "#4f1119")
-                          (bg-removed-faint   "#380a0f")
-                          (bg-removed-refine  "#781a1f")
-                          (bg-removed-fringe  "#b81a1f")
-                          (fg-removed         "#ffbfbf")
-                          (fg-removed-intense "#ff9095"))))
-                '())
           (setq modus-themes-to-toggle '(,light-theme ,dark-theme))
           (setq modus-themes-italic-constructs t)
           (setq modus-themes-bold-constructs t)
@@ -467,15 +447,20 @@ different level headings will have different size."
                                                       (6 . (1.0))
                                                       (7 . (0.9))
                                                       (8 . (0.9))))))
-                '()))
-        (load-theme ',theme t (not (display-graphic-p)))
-        ,@(if (get-value 'emacs-server-mode? config #f)
-              `((add-hook 'server-after-make-frame-hook
-                          (lambda ()
-                            (when (null custom-enabled-themes)
-                              (enable-theme ',theme)))))
-              '()))
-      #:elisp-packages (list emacs-modus-themes)
+                '())
+
+          ;; A small hack to defer execution of
+          ;; `modus-themes-include-derivatives-mode' and avoid recursive
+          ;; infinite loading of modus-themes.
+          (run-at-time 0 nil (lambda ()
+                               (require 'ef-themes)
+                               (modus-themes-include-derivatives-mode))))
+
+        (if after-init-time
+            (load-theme ',theme t (not (display-graphic-p)))
+            (add-hook 'after-init-hook
+                      (lambda () (load-theme ',theme t)))))
+      #:elisp-packages (list emacs-modus-themes emacs-ef-themes)
       #:summary "Modus Themes extensions"
       #:commentary "Customizations to Modus Themes, the elegant,
 highly legible Emacs themes.\
@@ -720,7 +705,13 @@ utilizing reverse-im package."
          (add-hook 'post-command-hook
                    '(lambda ()
                       (set-cursor-color
-                       (if current-input-method "DarkOrange1" "black"))))
+                       (if current-input-method
+                           (if (fboundp 'modus-themes-get-color-value)
+                               (modus-themes-get-color-value 'accent-0)
+                               "DarkOrange1")
+                         (if (fboundp 'modus-themes-get-color-value)
+                             (modus-themes-get-color-value 'cursor)
+                             "black")))))
 
          ,@(map (lambda (x) `(require ',(strip-emacs-name x)))
                 input-method-packages)
@@ -2090,6 +2081,50 @@ parses its input."
          (setq completion-category-defaults nil)
          (setq enable-recursive-minibuffers t)
 
+         ,#~"\n;; Works around an Emacs bug where completion boundary handling
+;; doubles the directory prefix (e.g. examples/ -> examples/examples/...)
+;; when using `completion-at-point' in the minibuffer."
+
+         ;; TODO: [Andrew Tropin, 2026-02-27] Report the problem upstream and
+         ;; put ticket number for tracking here.
+         (defun rde-minibuffer-completion-at-point ()
+           "Variant of `completion-at-point' for minibuffers.
+Works around an Emacs bug where completion boundary handling
+doubles the directory prefix."
+           (interactive)
+           (let* ((res (run-hook-wrapped
+                        'completion-at-point-functions
+                        (function completion--capf-wrapper) 'all))
+                  (data (and (consp res) (consp (cdr res)) (cdr res)))
+                  (start (nth 0 data))
+                  (end (nth 1 data))
+                  (collection (nth 2 data))
+                  (plist (nthcdr 3 data))
+                  (pred (plist-get plist :predicate))
+                  (initial (and start end
+                                (buffer-substring-no-properties start end)))
+                  (md (and initial
+                           (completion-metadata initial collection pred)))
+                  (candidates
+                   (and initial
+                        (completion-all-completions
+                         initial collection pred (length initial) md))))
+             (when candidates
+               (setcdr (last candidates) nil)
+               (let ((result (completing-read
+                              "Complete: " candidates nil nil initial)))
+                 (when (and result (not (string-empty-p result)))
+                   (delete-region start end)
+                   (goto-char start)
+                   (insert result))))))
+
+         (define-key minibuffer-local-map
+                     (vector 'remap 'completion-at-point)
+                     'rde-minibuffer-completion-at-point)
+         (define-key minibuffer-local-map
+                     (vector 'remap 'complete-symbol)
+                     'rde-minibuffer-completion-at-point)
+
          ;; (setq resize-mini-windows nil)
 
          ;; MAYBE: Make transient use child-frame:
@@ -2244,6 +2279,87 @@ Annotations for completion candidates using marginalia."
              (emacs-mini-frame? . ,mini-frame?)))
    (home-services-getter get-home-services)))
 
+(define* (feature-emacs-completion-preview
+          #:key
+          (minimum-symbol-length 2))
+  "Enable completion-preview-mode, a built-in Emacs 30+ feature that
+shows inline completion suggestions as you type.  The keybindings should be
+intuitive, just use the same motion actions like <forward-sentence> to
+complete the candidate appeared in preview overlay.  There is an option to go
+through multiple candidates, either one by one (with <backward-paragraph> and
+<forward-paragraph>) or with minibuffer completion interface (just tap C-M-i
+or call `completion-at-point')."
+
+  (define emacs-f-name 'completion-preview)
+  (define f-name (symbol-append 'emacs- emacs-f-name))
+
+  (define (get-home-services config)
+    (list
+     (rde-elisp-configuration-service
+      emacs-f-name
+      config
+      `((add-hook 'after-init-hook 'global-completion-preview-mode)
+        (define-key global-map (kbd "M-i") 'completion-preview-complete)
+        (with-eval-after-load 'completion-preview
+          (setopt completion-preview-minimum-symbol-length
+                  ,minimum-symbol-length)
+          (defun rde-disable-compeltion-preview-during-capf
+            (orig-fun &rest args)
+            "Disable completion preview overlay, when capf triggered."
+            (let ((preview-overlay
+                   (and (bound-and-true-p completion-preview--overlay)
+                        completion-preview--overlay)))
+              (when (bound-and-true-p completion-preview-active-mode)
+                (completion-preview-active-mode))
+              (apply orig-fun args)
+              (completion-preview-active-mode)))
+
+          (advice-add 'consult-completion-in-region
+                      :around 'rde-disable-compeltion-preview-during-capf)
+
+          (defun rde-minibuffer-completion-preview-mode ()
+            "Set message format to nil for completion-preview mode in
+minibuffer."
+            (setq-local completion-preview-message-format nil)
+            (completion-preview-mode))
+
+          (with-eval-after-load 'vertico
+            (setopt completion-preview-sort-function
+                    (vertico--sort-function)))
+
+          (add-hook 'minibuffer-mode-hook
+                    'rde-minibuffer-completion-preview-mode)
+
+          (let ((map completion-preview-active-mode-map))
+            (keymap-set map "<remap> <forward-word>"
+                        'completion-preview-complete)
+            (keymap-set map "<remap> <forward-sentence>"
+                        'completion-preview-insert)
+            (keymap-set map "<remap> <forward-sexp>"
+                        'completion-preview-insert)
+            (keymap-set map "<remap> <sp-forward-sexp>"
+                        'completion-preview-insert)
+
+            ;; For modes like org mode, where M-e bound to other function
+            (define-key map (kbd "M-e") 'completion-preview-insert)
+
+            ;; Usually C-<up>/<down>
+            (define-key map "<remap> <backward-paragraph>"
+              'completion-preview-next-candidate)
+            (define-key map "<remap> <forward-paragraph>"
+              'completion-preview-prev-candidate))))
+      #:summary "\
+Inline completion preview"
+      #:commentary "\
+Enable `global-completion-preview-mode' and configure keybindings for
+inline completion suggestions.  Integrates with consult, vertico, and
+minibuffer completion."
+      #:keywords '(convenience completion))))
+
+  (feature
+   (name f-name)
+   (values `((,f-name . #t)))
+   (home-services-getter get-home-services)))
 
 (define* (feature-emacs-vertico
           #:key
@@ -3369,6 +3485,7 @@ language for GNU Emacs."
           (emacs-magit-todos emacs-magit-todos)
           (emacs-git-timemachine emacs-git-timemachine)
           (emacs-git-link emacs-git-link)
+          (emacs-git-email emacs-git-email-sans-mu4e)
           (emacs-git-gutter-fringe emacs-git-gutter-fringe)
           (emacs-git-gutter-transient emacs-git-gutter-transient))
   "Configure git-related utilities for GNU Emacs, including magit,
@@ -3379,6 +3496,7 @@ git-link, git-timemachine."
   (ensure-pred file-like? emacs-magit-todos)
   (ensure-pred file-like? emacs-git-timemachine)
   (ensure-pred file-like? emacs-git-link)
+  (ensure-pred file-like? emacs-git-email)
   (ensure-pred file-like? emacs-git-gutter-fringe)
   (ensure-pred file-like? emacs-git-gutter-transient)
 
@@ -3423,8 +3541,14 @@ git-link, git-timemachine."
         (define-key global-map (kbd ,git-gutter-transient-key)
           'git-gutter-transient)
 
-        (with-eval-after-load
-         'transient
+        (with-eval-after-load 'transient
+          ;; Jumping around options in transient menu doesn't make much sense,
+          ;; but sometimes occupied bindings for arrow get in the
+          ;; way. e.g. rebase in majutsu
+          (keymap-unset transient-map "<left>")
+          (keymap-unset transient-map "<right>")
+          (keymap-unset transient-map "<up>")
+          (keymap-unset transient-map "<down>")
           (setq transient-history-file
                 (concat (or (getenv "XDG_CACHE_HOME") "~/.cache")
                         "/emacs/transient/history.el")))
@@ -3444,6 +3568,8 @@ git-link, git-timemachine."
                                  'magit-insert-stashes)
          (defvar rde-projects-directory ,(or project-directory 'nil)
            "Directory where project repositories are stored.")
+
+         (git-email-magit-setup)
 
          (autoload 'git-link--parse-remote "git-link")
          (defun rde-get-local-repo-path-from-url (url)
@@ -3497,6 +3623,7 @@ Almost all other operations are covered by magit."
       #:keywords '(convenience faces)
       #:elisp-packages (list emacs-magit emacs-magit-todos
                              emacs-git-link emacs-git-timemachine
+                             emacs-git-email
                              emacs-git-gutter-fringe
                              emacs-git-gutter-transient))))
 
@@ -3507,13 +3634,11 @@ Almost all other operations are covered by magit."
 
 (define* (feature-emacs-geiser
           #:key
-          (emacs-geiser emacs-geiser-latest)
-          (emacs-gider emacs-gider-latest)
-          (emacs-geiser-guile emacs-geiser-guile-latest)
-          (emacs-geiser-eros emacs-geiser-eros-latest))
+          (emacs-geiser emacs-geiser)
+          (emacs-geiser-guile emacs-geiser-guile)
+          (emacs-geiser-eros emacs-geiser-eros))
   "Configure geiser for emacs."
   (ensure-pred file-like? emacs-geiser)
-  (ensure-pred file-like? emacs-gider)
   (ensure-pred file-like? emacs-geiser-guile)
   (ensure-pred file-like? emacs-geiser-eros)
 
@@ -3533,8 +3658,7 @@ Almost all other operations are covered by magit."
                                   (xdg-cache-home)))
           (setq geiser-repl-add-project-paths nil))
         (with-eval-after-load 'geiser-mode
-          (geiser-eros-mode)
-          (gider-mode))
+          (geiser-eros-mode))
         (with-eval-after-load 'geiser-impl
           (setq geiser-default-implementation 'guile)
           (setq geiser-active-implementations '(guile))
@@ -3551,7 +3675,7 @@ Almost all other operations are covered by magit."
                         '((:results . "scalar")))))
               '()))
       #:elisp-packages
-      (list emacs-geiser emacs-geiser-guile emacs-geiser-eros emacs-gider)
+      (list emacs-geiser emacs-geiser-guile emacs-geiser-eros)
       #:summary "\
 Scheme interpreter, giving access to a REPL and live metadata."
       #:commentary "\
@@ -3564,7 +3688,7 @@ Geiser is configured for the Guile scheme implementation.")))
 
 (define* (feature-emacs-guix
           #:key
-          (emacs-guix emacs-guix-latest)
+          (emacs-guix emacs-guix)
           (guix-key "s-G")
           (guix-directory "~/work/gnu/guix"))
   "Configure emacs for guix usage and development."
@@ -3948,9 +4072,9 @@ built-in help that provides much more contextual information."
               '())
         (add-hook 'helpful-mode-hook 'visual-line-mode)
         (with-eval-after-load 'helpful
-          (define-key helpful-mode-map "q" 'kill-this-buffer))
+          (define-key helpful-mode-map "q" 'kill-current-buffer))
         (with-eval-after-load 'help-mode
-          (define-key help-mode-map "q" 'kill-this-buffer)
+          (define-key help-mode-map "q" 'kill-current-buffer)
           (setq help-window-select t)))
       #:elisp-packages (list emacs-helpful))))
 
@@ -4000,7 +4124,7 @@ built-in help that provides much more contextual information."
                 (add-hook 'Info-mode-hook 'rde-info-set-custom-faces))
               '())
         (with-eval-after-load 'info
-          (define-key Info-mode-map "q" 'kill-this-buffer)
+          (define-key Info-mode-map "q" 'kill-current-buffer)
           (setq Info-use-header-line nil)
           (require 'info+)
           (add-hook 'Info-mode-hook 'visual-line-mode)
@@ -4325,14 +4449,41 @@ Indentation and refile configurations, visual adjustment."
         :log t
         :order 100)
        (:name none
-        :todo ("IDEA")
-        :order 1)
+        :time-grid t
+        :order 6)
        (:name none
         :todo ("PROJ")
-        :order 2)
+        :order 8)
+       (:name none
+        :todo ("IDEA")
+        :order 9)
        (:name none
         :todo ,org-done-keywords-for-agenda
         :order 10)))))
+
+(define %rde-org-super-agenda-daily-config
+  `((org-super-agenda-unmatched-name 'none)
+    (org-super-agenda-unmatched-order 5)
+    (org-super-agenda-header-separator "\n")
+    (org-super-agenda-final-group-separator "\n")
+    (org-super-agenda-hide-empty-groups nil)
+    (org-super-agenda-groups
+     `((:name "Clocked today"
+        :log t
+        :order 100)
+       (:discard (:todo ,org-done-keywords-for-agenda))
+       (:name none
+        :time-grid t
+        :order 6)
+       (:name "To Do"
+        :todo ("TODO")
+        :order 1)
+       (:name none
+        :todo ("PROJ")
+        :order 8)
+       (:name "To Plan"
+        :todo ("IDEA")
+        :order 9)))))
 
 (define %rde-org-agenda-custom-commands
   `(list
@@ -4342,9 +4493,9 @@ Indentation and refile configurations, visual adjustment."
         ""
         ((org-agenda-span 1)
          (org-agenda-scheduled-leaders '("" "Sched.%2dx: "))
-         (org-agenda-block-separator nil)
+         (org-agenda-block-separator "-")
          (org-scheduled-past-days 0)
-         ,@%rde-org-super-agenda-config
+         ,@%rde-org-super-agenda-daily-config
          ;; We don't need the `org-agenda-date-today'
          ;; highlight because that only has a practical
          ;; utility in multi-day views.
@@ -4427,7 +4578,9 @@ Indentation and refile configurations, visual adjustment."
           (org-agenda-files #f)
           (org-agenda-custom-commands %rde-org-agenda-custom-commands)
           (org-agenda-prefix-format #f)
-          (org-agenda-appt? #f))
+          (org-agenda-appt? #f)
+          (org-agenda-highlight-items-with-body? #t)
+          (org-agenda-swap-g-r? #t))
   "Configure org-agenda for GNU Emacs."
   (define (maybe-path-or-list? elt)
     (or (maybe-path? elt) (maybe-list? elt)))
@@ -4437,6 +4590,8 @@ Indentation and refile configurations, visual adjustment."
   (ensure-pred list? org-agenda-custom-commands)
   (ensure-pred maybe-list? org-agenda-prefix-format)
   (ensure-pred boolean? org-agenda-appt?)
+  (ensure-pred boolean? org-agenda-highlight-items-with-body?)
+  (ensure-pred boolean? org-agenda-swap-g-r?)
 
   (define emacs-f-name 'org-agenda)
   (define f-name (symbol-append 'emacs- emacs-f-name))
@@ -4456,6 +4611,11 @@ Indentation and refile configurations, visual adjustment."
         (defgroup rde-org-agenda nil
           "Custom enhancements to the Org Agenda."
           :group 'rde)
+
+        (defface rde-org-agenda-has-body
+          '((t :inherit org-verse))
+          "Face for agenda items that have body content."
+          :group 'rde-org-agenda)
 
         ,@(if org-agenda-appt?
               (org-agenda-appt config)
@@ -4494,6 +4654,75 @@ result is longer than LEN."
             (if (and (not project-title) (numberp len))
                 (s-truncate len (s-pad-right len " " result))
                 result)))
+
+        (defun rde-org-agenda-reschedule-count ()
+          "Return the number of times the entry at point was rescheduled.
+Counts Rescheduled entries in the LOGBOOK drawer.  Intended for use
+in `org-agenda-prefix-format' via %(rde-org-agenda-reschedule-count)."
+          (save-excursion
+            (let ((count 0)
+                  (bound (org-entry-end-position)))
+              (when (re-search-forward
+                     "^[ \t]*:LOGBOOK:[ \t]*$" bound t)
+                (let ((drawer-end
+                       (save-excursion
+                         (if (re-search-forward
+                              "^[ \t]*:END:[ \t]*$" bound t)
+                             (point)
+                           bound))))
+                  (while (re-search-forward
+                          "^[ \t]*-[ \t]+Rescheduled" drawer-end t)
+                    (setq count (+ count 1)))))
+              (cond
+               ((> count 9) "R:∞  ")
+               ((> count 0) (format "R:%d  " count))
+               (t "     ")))))
+
+        (defun rde-org-agenda-entry-has-body-p (marker)
+          "Return non-nil if the org entry at MARKER has meaningful body content.
+Body content is text that is not a planning line, drawer, or blank line."
+          (with-current-buffer (marker-buffer marker)
+            (save-excursion
+              (goto-char (marker-position marker))
+              (let ((entry-end (org-entry-end-position))
+                    (has-body nil))
+                ;; Move past the heading line
+                (forward-line 1)
+                (while (and (not has-body) (< (point) entry-end))
+                  (let ((line (buffer-substring-no-properties
+                               (line-beginning-position) (line-end-position))))
+                    (cond
+                     ;; Skip planning lines
+                     ((string-match-p
+                       "^[ \t]*\\(SCHEDULED\\|DEADLINE\\|CLOSED\\):" line))
+                     ;; Skip drawers: jump from :DRAWER: to :END:
+                     ((string-match-p "^[ \t]*:[A-Z_]+:[ \t]*$" line)
+                      (when (re-search-forward
+                             "^[ \t]*:END:[ \t]*$" entry-end t)
+                        (forward-line 0)))
+                     ;; Skip blank lines
+                     ((string-match-p "^[ \t]*$" line))
+                     ;; Anything else is body content
+                     (t (setq has-body t))))
+                  (forward-line 1))
+                has-body))))
+
+        (defun rde-org-agenda-highlight-items-with-body ()
+          "Apply `rde-org-agenda-has-body' face to agenda items with body content."
+          (save-excursion
+            (goto-char (point-min))
+            (while (not (eobp))
+              (let ((marker (get-text-property (point) 'org-marker)))
+                (when (and marker (rde-org-agenda-entry-has-body-p marker))
+                  (let ((txt-start
+                         (text-property-any
+                          (line-beginning-position) (line-end-position)
+                          'org-heading t)))
+                    (when txt-start
+                      (add-face-text-property
+                       txt-start (line-end-position)
+                       'rde-org-agenda-has-body t)))))
+              (forward-line 1))))
 
         (define-key global-map (kbd "C-x C-a") 'org-agenda)
         (add-hook 'org-agenda-mode-hook
@@ -4552,6 +4781,24 @@ result is longer than LEN."
                    `(quote ,org-agenda-prefix-format))
                   (else
                    ''())))
+
+          (defun rde-org-agenda-preserve-truncate-lines (orig-fun &rest r)
+            "Preserve `truncate-lines' state across `org-agenda-redo'."
+            (let ((truncate-p truncate-lines))
+              (apply orig-fun r)
+              (setq truncate-lines truncate-p)))
+          (advice-add 'org-agenda-redo :around
+                      'rde-org-agenda-preserve-truncate-lines)
+
+          ,@(if org-agenda-highlight-items-with-body?
+                '((add-hook 'org-agenda-finalize-hook
+                            'rde-org-agenda-highlight-items-with-body))
+                '())
+
+          ,@(if org-agenda-swap-g-r?
+                '((define-key org-agenda-mode-map (kbd "g") 'org-agenda-redo)
+                  (define-key org-agenda-mode-map (kbd "r") 'org-agenda-redo-all))
+                '())
           (autoload 'org-super-agenda-mode "org-super-agenda")
           (org-super-agenda-mode)))
       #:elisp-packages (list emacs-org-wild-notifier emacs-org-super-agenda)
@@ -5545,7 +5792,7 @@ with a floating-point value between 0 and 1."
           (setq ebdb-completion-display-record nil)
           (setq ebdb-complete-mail-allow-cycling nil)
           (setq ebdb-save-on-exit t)
-          (define-key ebdb-mode-map "q" 'kill-this-buffer)))
+          (define-key ebdb-mode-map "q" 'kill-current-buffer)))
       #:elisp-packages (list emacs-ebdb))))
 
   (feature

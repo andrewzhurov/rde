@@ -1,6 +1,6 @@
 ;;; rde --- Reproducible development environment.
 ;;;
-;;; Copyright © 2021, 2022, 2023, 2024, 2025 Andrew Tropin <andrew@trop.in>
+;;; Copyright © 2021, 2022, 2023, 2024, 2025, 2026 Andrew Tropin <andrew@trop.in>
 ;;; Copyright © 2021 Demis Balbach <db@minikn.xyz>
 ;;; Copyright © 2022, 2024 Nicolas Graves <ngraves@ngraves.fr>
 ;;; Copyright © 2023 Miguel Ángel Moreno <me@mianmoreno.com>
@@ -309,7 +309,36 @@ is among `rde-notmuch-patch-control-codes'."
              `((setq mml-secure-openpgp-signers '(,gpg-primary-key))
                (setq mml-secure-openpgp-encrypt-to-self t)
                ;; (setq mml-secure-openpgp-sign-with-sender t)
-               (add-hook 'message-setup-hook 'mml-secure-message-sign-pgpmime))
+               (add-hook 'message-setup-hook 'mml-secure-message-sign-pgpmime)
+
+               (defun rde-message-forward-make-body-preserve-secure
+                 (fn &rest args)
+                 "Ensure forwarded content is inserted after any <#secure> tag.
+Temporarily removes the secure tag before FN inserts forwarded
+content, then re-inserts it at the top of the body."
+                 (let (secure-tag)
+                   (save-excursion
+                     (goto-char (point-min))
+                     (when (re-search-forward
+                            (concat "^"
+                                    (regexp-quote mail-header-separator)
+                                    "\n")
+                            nil t)
+                       (when (looking-at "<#secure.+>\n")
+                         (setq secure-tag (match-string 0))
+                         (delete-region (match-beginning 0) (match-end 0)))))
+                   (apply fn args)
+                   (when secure-tag
+                     (save-excursion
+                       (goto-char (point-min))
+                       (when (re-search-forward
+                              (concat "^"
+                                      (regexp-quote mail-header-separator)
+                                      "\n")
+                              nil t)
+                         (insert secure-tag))))))
+               (advice-add 'message-forward-make-body :around
+                           'rde-message-forward-make-body-preserve-secure))
              '())
 
          (setq message-citation-line-function
@@ -515,11 +544,8 @@ unlikely you ever need this)."
      ;; https://lists.sr.ht/~abcdw/rde-devel/<20221118013128.6520-1-shilling.jake@gmail.com>
      (service home-mcron-service-type
               (home-mcron-configuration
-               (jobs (list #~(job '(next-hour)
-                                  (lambda ()
-                                    (setenv "DISPLAY" ":0")
-                                    (system* "mbsync" "-a")
-                                    (system* "l2md")))))))
+               (jobs
+                (list #~(job '(next-hour) (lambda () (system* "l2md" "-v")))))))
      (service
       home-l2md-service-type
       (home-l2md-configuration
@@ -934,7 +960,7 @@ to offset block quotes."
 (define* (feature-goimapnotify
           #:key
           (mail-account-ids #f)
-          (goimapnotify go-gitlab.com-shackra-goimapnotify-next)
+          (goimapnotify goimapnotify)
           (notify? #f))
   "Set up and configure goimapnotify to listen on IMAP mailbox changes.  If
 MAIL-ACCOUNT-IDS is not provided, use all the mail accounts.  You can also
@@ -962,15 +988,20 @@ control whether to NOTIFY? when new emails arrive."
        (config
         `#(,@(map
               (lambda (acc)
-                `((host . ,(assoc-ref
-                            (assoc-ref
-                             (assoc-ref
-                              (get-value 'mail-providers-settings config)
-                              (mail-account-type acc))
-                             'smtp)
-                            'host))
-                  (port . 143)
-                  (tls . #f)
+                (let* ((provider-settings
+                        (assoc-ref
+                         (get-value 'mail-providers-settings config)
+                         (mail-account-type acc)))
+                       (imap-settings
+                        (assoc-ref provider-settings 'imap))
+                       (host (assoc-ref imap-settings 'host))
+                       (starttls?
+                        (assoc-ref imap-settings 'starttls?))
+                       (port (or (assoc-ref imap-settings 'port)
+                                 (if starttls? 143 993))))
+                `((host . ,host)
+                  (port . ,port)
+                  (tls . ,(not starttls?))
                   (tlsOptions . ((rejectUnauthorized . #t)))
                   (username . ,(mail-account-fqda acc))
                   (passwordCmd . ,(mail-account-get-pass-cmd acc))
@@ -1013,7 +1044,7 @@ control whether to NOTIFY? when new emails arrive."
                                              :title "New email received"
                                              :timeout 5000))))))))
                              (else '()))
-                            '()))))))
+                            '())))))))
               mail-accounts)))))))
 
   (feature

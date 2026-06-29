@@ -17,6 +17,7 @@
   #:use-module (rde features base)
   #:use-module (rde features clojure)
   #:use-module (rde features containers)
+  #:use-module (rde features difftastic)
   #:use-module (rde features emacs)
   #:use-module (rde features emacs-xyz)
   #:use-module (rde features fontutils)
@@ -97,6 +98,8 @@
                                                       (line-end-position)))
               (newline)))
           (define-key org-mode-map (kbd "M-o") 'rde-org-goto-end-of-heading))
+
+        ,@(@ (rde-configs users abcdw emacs) telega-config)
 
         (with-eval-after-load 'geiser-mode
           (setq geiser-mode-auto-p nil)
@@ -556,7 +559,11 @@ if [ -f $GUIX_PROFILE/etc/profile ]; then source $GUIX_PROFILE/etc/profile; fi
         "* TODO %:subject %?\nSCHEDULED: %t\n%U\n%a\n"
         :immediate-finish t)
        ("t" "Todo" entry (file+headline "" "Tasks") ;; org-default-notes-file
+        "* IDEA %?\nSCHEDULED: %t\n%a\n")
+       ("s" "Subtask" entry (function rde-org-find-subtask-location)
         "* TODO %?\nSCHEDULED: %t\n%a\n")
+       ;; ("s" "Subtask" entry (function org-capture-target-under-point)
+       ;;  "* TODO %?\n  %i\n  %a")
        ("p" "PhD Todo" entry
         (file+headline "/data/abcdw/work/abcdw/private/phd.org" "Tasks")
         "* TODO %?\nSCHEDULED: %t\n%a\n")))
@@ -654,6 +661,8 @@ subject:/home:/) and tag:new}\"'"
     (feature-emacs-gptel)
     (feature-emacs-ellama)
     (feature-emacs-cua)
+    (feature-difftastic
+     #:parse-error-limit 1000)
     (feature-keyboard
      ;; To get all available options, layouts and variants run:
      ;; cat `guix build xkeyboard-config`/share/X11/xkb/rules/evdev.lst

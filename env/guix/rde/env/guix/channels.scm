@@ -14,6 +14,7 @@
          (url "https://git.guix.gnu.org/guix.git")
          (branch "master")
          (commit
+          ;; "0ce84291efb22a0f7b73a9099b4d2bfde267e352"    ;; abcdw/master 2026-05-04
           ;; "df3d4db1f76c03855d92f7de96bac5f36e338e1c"    ;; updated tdlib,           CommitDate: Tue Dec 2 18:04:29 2025 +0100
           ;; "02114e6e983751ce6156a4d09beb50142109a030"    ;; moved tdlb,              CommitDate: Wed Oct 22 19:37:56 2025 +0200
           ;; "2f12efaf3994edc23be816bb49dd2a349ca99ac9" ;; before moved tdlib,      CommitDate: Wed Oct 22 19:37:48 2025 +0200

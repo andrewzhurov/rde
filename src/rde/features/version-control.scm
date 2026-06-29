@@ -30,6 +30,7 @@
           (sign-commits? #t)
           (git-sign-key #f)
           (git-send-email? #t)
+          (require-signed-commits-on-push? #f)
           (extra-config '()))
   "Setup and configure Git."
   (ensure-pred file-like? git)
@@ -37,6 +38,15 @@
   (ensure-pred boolean? sign-commits?)
   (ensure-pred boolean? git-send-email?)
   (ensure-pred list? extra-config)
+
+  (when require-signed-commits-on-push?
+    (warning
+     ;; the pre-push-hook arguments is a complete mess, I tried to improve
+     ;; script a few times and it keep failing in different use cases.  I give
+     ;; up on the accidential complexity of the Git. Use jujutsu, Luke.
+
+     (G_ "'~a' in feature-git is deprecated and ignored, don't use it.~%")
+     'require-signed-commits-on-push?))
 
   (define (git-home-services config)
     "Returns home services related to Git."
@@ -73,7 +83,8 @@ is provided or disable `sign-commits?' Current sign-key value is ~a")
                     `((editor . ,(file-append
                                   (get-value 'emacs-client config)
                                   " --reuse-frame")))
-                    '())))
+                    '())
+              (hooksPath . "~/.config/git/hooks")))
             (user
              ((name . ,(get-value 'full-name config))
               (email . ,(get-value 'email config))
