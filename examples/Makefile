@@ -7,11 +7,17 @@ GUIXTM_LATEST_GUIX=guix time-machine -L ./env/guix -C ${CHANNELS_FILE_LATEST_GUI
 
 GUIX=$(GUIXTM) --
 
-# Local rde module dirs, passed to `guix home/system` subcommands so that
+# Local rde module dir, passed to `guix home/system` subcommands so that
 # our local edits to (rde ...) modules override the rde channel's compiled
 # copies.  GUILE_LOAD_PATH alone is not enough: the channel ships
 # precompiled .go files that shadow the source found via GUILE_LOAD_PATH.
-RDE_LOAD_PATH=-L ../src -L ../tests
+#
+# NB: do NOT add `-L ../tests' here.  guix discovers and loads every module
+# under the load path whose name starts with (rde ...); tests/rde/*.scm
+# declare such module names (e.g. (rde test-runners)) and pull in `gider',
+# which is not on the load path, causing `test-runner-default: unbound
+# variable' during home reconfigure.  The config needs nothing from ../tests.
+RDE_LOAD_PATH=-L ../src
 
 SRC_DIR=./src
 CONFIGS=${SRC_DIR}/andrewzhurov/configs.scm
