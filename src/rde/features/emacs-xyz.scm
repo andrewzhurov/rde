@@ -465,8 +465,18 @@ different level headings will have different size."
             (load-theme ',theme t (not (display-graphic-p)))
             (add-hook 'after-init-hook
                       (lambda () (load-theme ',theme t)))))
+      #:early-init
+      ;; Emacs 30+ bundles an older modus-themes (etc/themes/), where
+      ;; `modus-themes-theme'/`modus-themes-declare' differ (macro vs
+      ;; function, missing symbols).  If a theme is enabled early (e.g. a
+      ;; stale custom.el `custom-enabled-themes'), its `require-theme
+      ;; 'modus-themes' pulls the built-in version and poisons the symbols,
+      ;; breaking the packaged theme later with "Invalid function:
+      ;; modus-themes-theme".  Force the packaged modus-themes to load first
+      ;; so the feature is already provided and the built-in is never used.
+      `((require 'modus-themes))
       #:elisp-packages (list emacs-modus-themes emacs-ef-themes)
-      #:summary "Modus Themes extensions"
+       #:summary "Modus Themes extensions"
       #:commentary "Customizations to Modus Themes, the elegant,
 highly legible Emacs themes.\
 
