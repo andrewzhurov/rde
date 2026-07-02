@@ -38,6 +38,7 @@
   #:use-module (rde features rust)
   #:use-module (rde features bun)
   #:use-module (rde features ai)
+  #:use-module (rde features emacs-opencode)
   #:use-module (rde features guile)
   #:use-module (rde features arei)
   #:use-module (rde features web-browsers)
@@ -442,7 +443,11 @@
    (feature-ai #:aiml-api-key (@ (andrewzhurov secret) aiml-api-key)
                #:sambanova-api-key (@ (andrewzhurov secret) sambanova-api-key)
                #:deepseek-api-key (@ (andrewzhurov secret) deepseek-api-key))
-   (feature-bun)
+    (feature-bun)
+
+   ;; Emacs pairing client for OpenCode agents (C-c o a / C-c o m).
+   (feature-emacs-opencode
+    #:server-url "http://localhost:4098")
 
    (feature-keyboard
     ;; To get all available options, layouts and variants run:
