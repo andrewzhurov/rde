@@ -33,7 +33,7 @@
 ;;; ---------------------------------------------------------------------------
 ;;; emacs-opencode package — built from the vendored elisp.
 
-(define* (emacs-opencode-from-source source #:key (version "0.1.0"))
+(define* (emacs-opencode-from-source source #:key (version "0.2.0"))
   "Package opencode.el from SOURCE (a file-like pointing at opencode.el).
 Pure Emacs Lisp, built-in deps only (url.el, json.el, project, vc)."
   (package
@@ -59,18 +59,32 @@ stays in the OpenCode web UI.")
           (opencode-el-source (local-file "./opencode.el"))
           (server-url "http://localhost:4098")
           (select-agent-key "C-c o a")
-          (message-key "C-c o m"))
+          (message-key "C-c o m")
+          (compose-key "C-c o c")
+          (which-agent-key "C-c o w"))
   "Configure the OpenCode Emacs pairing client.
 
 OPENCODE-EL-SOURCE is a file-like containing opencode.el; it defaults to
 the copy vendored next to this feature.  SERVER-URL is the OpenCode
 daemon base URL (the daily-driver dev instance serves on
-http://localhost:4098).  SELECT-AGENT-KEY and MESSAGE-KEY are global
-keybindings for the two commands."
+http://localhost:4098).  SELECT-AGENT-KEY, MESSAGE-KEY, COMPOSE-KEY and
+WHICH-AGENT-KEY are global keybindings for the commands.
+
+SELECT-AGENT-KEY runs `opencode-select-agent': plain it picks among the
+current project's agents; with a prefix arg (C-u) it lets you pick ANY
+workspace the daemon knows and one of its agents — so you can drive, say,
+the `guild' project's agent from a buffer in an unrelated repo.  The pick
+is remembered against the buffer's project root and as a global sticky
+default (used from buffers whose root has no selection of its own).
+MESSAGE-KEY runs `opencode-message' (one-shot send); COMPOSE-KEY runs
+`opencode-compose' (accumulate several takes in a buffer, send on
+C-c C-c); WHICH-AGENT-KEY runs `opencode-which-agent'."
   (ensure-pred file-like? opencode-el-source)
   (ensure-pred string? server-url)
   (ensure-pred string? select-agent-key)
   (ensure-pred string? message-key)
+  (ensure-pred string? compose-key)
+  (ensure-pred string? which-agent-key)
 
   (define emacs-opencode (emacs-opencode-from-source opencode-el-source))
 
@@ -86,13 +100,16 @@ keybindings for the two commands."
         (setq opencode-server-url ,server-url)
         (define-key global-map (kbd ,select-agent-key) 'opencode-select-agent)
         (define-key global-map (kbd ,message-key) 'opencode-message)
+        (define-key global-map (kbd ,compose-key) 'opencode-compose)
+        (define-key global-map (kbd ,which-agent-key) 'opencode-which-agent)
         ;; The agent's file edits flow back automatically.
         (global-auto-revert-mode 1))
       #:summary "Pair with an OpenCode agent from Emacs"
       #:commentary "\
-Selects a running OpenCode agent for the current project and sends it
-contextual messages (region/point + file).  Feedback is viewed in the
-OpenCode web UI."
+Selects a running OpenCode agent — of the current project, or (with a
+prefix arg) of any workspace the daemon knows — and sends it contextual
+messages (region/point + file), one-shot or by accumulating several takes
+in a compose buffer.  Feedback is viewed in the OpenCode web UI."
       #:keywords '(tools convenience)
       #:elisp-packages (list emacs-opencode))))
 

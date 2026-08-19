@@ -445,7 +445,11 @@
                #:deepseek-api-key (@ (andrewzhurov secret) deepseek-api-key))
     (feature-bun)
 
-   ;; Emacs pairing client for OpenCode agents (C-c o a / C-c o m).
+   ;; Emacs pairing client for OpenCode agents.
+   ;;   C-c o a   select agent (C-u: pick any workspace, cross-project)
+   ;;   C-c o m   message the selected agent with editor context (one-shot)
+   ;;   C-c o c   compose: accumulate takes in a buffer, send on C-c C-c
+   ;;   C-c o w   which agent is this buffer pointed at?
    (feature-emacs-opencode
     #:server-url "http://localhost:4098")
 
