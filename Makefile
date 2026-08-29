@@ -30,9 +30,13 @@ default: examples/keeper/home/reconfigure
 all: ares
 	@echo default target
 
-check:
+check: check-elisp
 	guile -L ./src -L ./tests -L ./files/emacs/gider/src -c \
 	'((@ (rde test-runners) run-project-tests-cli))'
+
+check-elisp:
+	$(EMACS) --batch --quick -l tests/rde/opencode-tests.el \
+	-f ert-run-tests-batch-and-exit
 
 guix-pull:
 	make -C examples guix-pull

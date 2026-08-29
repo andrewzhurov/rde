@@ -446,12 +446,15 @@
     (feature-bun)
 
    ;; Emacs pairing client for OpenCode agents.
-   ;;   C-c o a   select agent (C-u: pick any workspace, cross-project)
+   ;;   C-c o a   select agent (C-u: pick instance, project, then agent)
    ;;   C-c o m   message the selected agent with editor context (one-shot)
    ;;   C-c o c   compose: accumulate takes in a buffer, send on C-c C-c
    ;;   C-c o w   which agent is this buffer pointed at?
    (feature-emacs-opencode
-    #:server-url "http://localhost:4098")
+    #:server-url "http://localhost:4098"
+    #:server-instances
+    '(("isolated" . "http://localhost:4097")
+      ("daily2" . "http://localhost:4099")))
 
    (feature-keyboard
     ;; To get all available options, layouts and variants run:
