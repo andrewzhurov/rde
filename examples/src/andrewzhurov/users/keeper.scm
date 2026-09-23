@@ -65,19 +65,6 @@
 
 ;;; Helpers
 
-(define (secret name)
-  "Return NAME's value from the gitignored (andrewzhurov secret) module, or #f.
-An absent module is expected (fresh checkout, other machine) and is silent; a
-present module lacking NAME is most likely a typo, so warn about it."
-  (let ((m (resolve-module '(andrewzhurov secret) #:ensure #f)))
-    (cond
-     ((not m) #f)
-     ((module-variable m name) => variable-ref)
-     (else
-      (format (current-error-port)
-              "warning: (andrewzhurov secret) does not define `~a'~%" name)
-      #f))))
-
 (define* (mail-acc id user #:optional (type 'gmail))
   "Make a simple mail-account with gmail type by default."
   (mail-account
@@ -453,9 +440,10 @@ present module lacking NAME is most likely a typo, so warn about it."
    (feature-priority-bin)
    ;; (feature-syncthing)
    (feature-emacs-coq)
-   (feature-ai #:aiml-api-key (secret 'aiml-api-key)
-               #:sambanova-api-key (secret 'sambanova-api-key)
-               #:deepseek-api-key (secret 'deepseek-api-key))
+   ;; Keys come from auth-source at request time (~/.authinfo.gpg or pass,
+   ;; host = API host, login = apikey), see feature-ai's docstring.
+   (feature-ai #:backends '(sambanova aiml deepseek)
+               #:default-backend 'deepseek)
     (feature-bun)
 
    ;; Emacs pairing client for OpenCode agents.
