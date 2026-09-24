@@ -136,7 +136,15 @@ source files.")
     (arguments
      (substitute-keyword-arguments (package-arguments python-3.10)
        ((#:make-flags flags)
-        #~(list (string-append (car #$flags) " test_xml_etree" " test_xml_etree_c")))))))
+        ;; The two ignored tests expect EPERM when chown()ing / switching to
+        ;; another uid (nobody).  Under the unprivileged guix-daemon the build
+        ;; runs in a user namespace mapping only its own uid, so the kernel
+        ;; returns EINVAL instead and they fail.
+        #~(list (string-append
+                 (car #$flags)
+                 " test_xml_etree test_xml_etree_c"
+                 " -i test.test_os.ChownFileTests.test_chown_without_permission"
+                 " -i test.test_subprocess.POSIXProcessTestCase.test_user")))))))
 
 (define-public node-stable
   (package
@@ -207,6 +215,18 @@ source files.")
                                        libuv "/lib:"
                                        zlib "/lib"
                                        "'],"))))))
+               (add-after 'unpack 'tolerate-erofs-in-npm-chmod
+                 (lambda _
+                   ;; npm's bin-links chmods each bin of a package's
+                   ;; dependencies; with --install-links those live in the
+                   ;; read-only store.  graceful-fs forgives EPERM/EINVAL
+                   ;; from chmod, which a privileged guix-daemon's sandbox
+                   ;; returns.  An unprivileged daemon's sandbox returns
+                   ;; EROFS instead, failing every node package whose
+                   ;; dependencies ship bins.
+                   (substitute* "deps/npm/node_modules/graceful-fs/polyfills.js"
+                     (("er\\.code === \"EINVAL\" \\|\\| er\\.code === \"EPERM\"")
+                      "er.code === \"EINVAL\" || er.code === \"EPERM\" || er.code === \"EROFS\""))))
                (delete 'patch-additional-hardcoded-program-references)
                (delete 'patch-problematic-tests)
                (replace 'delete-problematic-tests
